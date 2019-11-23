@@ -12,6 +12,7 @@
  *   // for better autoconfig: mpr.autoConfigUSL = 256 * (supplyMillivolts - 700) / supplyMillivolts;
  *   
  *   Wire.begin();
+ *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
  *   bool* touches = mpr.readTouchState();
@@ -105,6 +106,36 @@ void mpr121::setFDL(byte rising, byte falling, byte touched) {
 }
 
 
+// set the "Max Half Delta" values for proximity detection (AN3891/AN3893)
+// max: 63
+void mpr121::setMHDProx(byte rising, byte falling) {
+  writeRegister(MPRREG_ELEPROX_MHD_RISING, rising);
+  writeRegister(MPRREG_ELEPROX_MHD_FALLING, falling);
+}
+
+// set the "Noise Half Delta" values for proximity detection (AN3891/AN3893)
+// max: 63
+void mpr121::setNHDProx(byte rising, byte falling, byte touched) {
+  writeRegister(MPRREG_ELEPROX_NHD_AMOUNT_RISING, rising);
+  writeRegister(MPRREG_ELEPROX_NHD_AMOUNT_FALLING, falling);
+  writeRegister(MPRREG_ELEPROX_NHD_AMOUNT_TOUCHED, touched);
+}
+
+// set the "Noise Count Limit" values for proximity detection (AN3891/AN3893)
+void mpr121::setNCLProx(byte rising, byte falling, byte touched) {
+  writeRegister(MPRREG_ELEPROX_NCL_RISING, rising);
+  writeRegister(MPRREG_ELEPROX_NCL_FALLING, falling);
+  writeRegister(MPRREG_ELEPROX_NCL_TOUCHED, touched);
+}
+
+// set the "Filter Delay Limit" values  for proximity detection(AN3891/AN3893)
+void mpr121::setFDLProx(byte rising, byte falling, byte touched) {
+  writeRegister(MPRREG_ELEPROX_FDL_RISING, rising);
+  writeRegister(MPRREG_ELEPROX_FDL_FALLING, falling);
+  writeRegister(MPRREG_ELEPROX_NCL_TOUCHED, touched);
+}
+
+
 // set "Debounce" counts
 // a detection must be held this many times before the status register is updated
 // max: 7
@@ -181,6 +212,11 @@ void mpr121::setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RE
 // create an MPR121 device with sane default settings
 mpr121::mpr121(byte addr, TwoWire *wire)
 {
+  // ensure the mpr device has had time to get ready
+  if (millis() < 10) {
+    delay(10);
+  }
+  
   i2cAddr = addr;
   i2cWire = wire;
 
@@ -197,6 +233,19 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   // FDLfalling = 0x02;
   // FDLtouched = 0x00; // ?
 
+  // values from AN3893
+  // MHDrisingProx = 0xff;
+  // MHDfallingProx = 0x01;
+  // NHDrisingProx = 0xff;
+  // NHDfallingProx = 0x01;
+  // NHDtouchedProx = 0x00;
+  // NCLrisingProx = 0x00;
+  // NCLfallingProx = 0xff;
+  // NCLtouchedProx = 0x00;
+  // FDLrisingProx = 0x00;
+  // FDLfallingProx = 0xff;
+  // FDLtouchedProx = 0x00;
+
   // adjusted values
   MHDrising = 0x01;
   MHDfalling = 0x01;
@@ -204,11 +253,24 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   NHDfalling = 0x03;
   NHDtouched = 0x00;
   NCLrising = 0x04;
-  NCLfalling = 0x80;
+  NCLfalling = 0xc0;
   NCLtouched = 0x00;
   FDLrising = 0x00;
   FDLfalling = 0x02;
   FDLtouched = 0x00;
+
+  // no clue what might be good here lol
+  MHDrisingProx = 0x20;
+  MHDfallingProx = 0x01;
+  NHDrisingProx = 0x10;
+  NHDfallingProx = 0x03;
+  NHDtouchedProx = 0x00;
+  NCLrisingProx = 0x04;
+  NCLfallingProx = 0xc0;
+  NCLtouchedProx = 0x00;
+  FDLrisingProx = 0x00;
+  FDLfallingProx = 0x80;
+  FDLtouchedProx = 0x00;
 
   for (int i = 0; i < 13; i++)
   {
@@ -346,15 +408,35 @@ void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
   }
 }
 
+// easy way to set touchThresholds and releaseThresholds
+// prox sets whether to set for proximity detection too
+void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
+  byte maxElectrode = 11;
+  if (prox)
+    maxElectrode = 12;
+
+  for (int i = 0; i <= maxElectrode; i++) {
+    touchThresholds[i] = touched;
+    releaseThresholds[i] = released;
+  }
+}
+
 
 // apply settings and enter run mode with a set number of electrodes
 void mpr121::startMPR(byte electrodes) {
+  stopMPR();
+  
   // restrict value of numeric properties with < 8 bits to actual sent values
   MHDrising &= 0b00111111;
   MHDfalling &= 0b00111111;
   NHDrising &= 0b00111111;
   NHDfalling &= 0b00111111;
   NHDtouched &= 0b00111111;
+  MHDrisingProx &= 0b00111111;
+  MHDfallingProx &= 0b00111111;
+  NHDrisingProx &= 0b00111111;
+  NHDfallingProx &= 0b00111111;
+  NHDtouchedProx &= 0b00111111;
   debounceTouch &= 0b0111;
   debounceRelease &= 0b0111;
   globalCDC &= 0b00111111;
@@ -371,6 +453,11 @@ void mpr121::startMPR(byte electrodes) {
   setNHD(NHDrising, NHDfalling, NHDtouched);
   setNCL(NCLrising, NCLfalling, NCLtouched);
   setFDL(FDLrising, FDLfalling, FDLtouched);
+  
+  setMHDProx(MHDrisingProx, MHDfallingProx);
+  setNHDProx(NHDrisingProx, NHDfallingProx, NHDtouchedProx);
+  setNCLProx(NCLrisingProx, NCLfallingProx, NCLtouchedProx);
+  setFDLProx(FDLrisingProx, FDLfallingProx, FDLtouchedProx);
   
   for (int i = 0; i < 13; i++)
   {

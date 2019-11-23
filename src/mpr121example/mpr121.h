@@ -12,6 +12,7 @@
  *   // for better autoconfig: mpr.autoConfigUSL = 256 * (supplyMillivolts - 700) / supplyMillivolts;
  *   
  *   Wire.begin();
+ *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
  *   bool* touches = mpr.readTouchState();
@@ -81,6 +82,21 @@ private:
   // set the "Filter Delay Limit" values (AN3891)
   void setFDL(byte rising, byte falling, byte touched);
 
+
+  // set the "Max Half Delta" values for proximity detection (AN3891/AN3893)
+  // max: 63
+  void setMHDProx(byte rising, byte falling);
+  
+  // set the "Noise Half Delta" values for proximity detection (AN3891/AN3893)
+  // max: 63
+  void setNHDProx(byte rising, byte falling, byte touched);
+  
+  // set the "Noise Count Limit" values for proximity detection (AN3891/AN3893)
+  void setNCLProx(byte rising, byte falling, byte touched);
+  
+  // set the "Filter Delay Limit" values  for proximity detection(AN3891/AN3893)
+  void setFDLProx(byte rising, byte falling, byte touched);
+
   
   // set "Debounce" counts
   // a detection must be held this many times before the status register is updated
@@ -141,8 +157,22 @@ public:
   byte FDLrising; // "Filter Delay Limit" rising value (AN3891)
   byte FDLfalling; // "Filter Delay Limit" falling value (AN3891)
   byte FDLtouched; // "Filter Delay Limit" touched value (AN3891)
+
   
-  // TODO: ELEPROX FILTER PARAMS
+  byte MHDrisingProx; // "Max Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
+  byte MHDfallingProx; // "Max Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
+  
+  byte NHDrisingProx; // "Noise Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
+  byte NHDfallingProx; // "Noise Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
+  byte NHDtouchedProx; // "Noise Half Delta" touched value for proximity detection (AN3891/AN3893) -- max: 63
+  
+  byte NCLrisingProx; // "Noise Count Limit" rising value for proximity detection (AN3891/AN3893)
+  byte NCLfallingProx; // "Noise Count Limit" falling value for proximity detection (AN3891/AN3893)
+  byte NCLtouchedProx; // "Noise Count Limit" touched value for proximity detection (AN3891/AN3893)
+  
+  byte FDLrisingProx; // "Filter Delay Limit" rising value for proximity detection (AN3891/AN3893)
+  byte FDLfallingProx; // "Filter Delay Limit" falling value for proximity detection (AN3891/AN3893)
+  byte FDLtouchedProx; // "Filter Delay Limit" touched value for proximity detection (AN3891/AN3893)
 
 
   byte debounceTouch; // set "Debounce" count for touch (times a detection must be sampled) -- max: 7
@@ -212,6 +242,10 @@ public:
   void writeElectrodeBaseline(byte electrode, byte value) {
     writeElectrodeBaseline(electrode, 1, value);
   }
+
+  // easy way to set touchThresholds and releaseThresholds
+  // prox sets whether to set for proximity detection too
+  void setAllThresholds(byte touched, byte released, bool prox);
 
 
   // apply settings and enter run mode with a set number of electrodes
