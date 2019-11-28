@@ -2,11 +2,11 @@
  * This is an implementation of sega's arcade touch slider protocol,
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
- * Copyright 2019 somewhatlurker, MIT license
+ * Requires a dedicated stream (such as `Serial`) to operate.
  * 
- * Parsing and serial writing are handled in here,
- * but other code must read data into a buffer for it.
- * This may change in the future, but it works for now.
+ * Usage: see thinithm
+ * 
+ * Copyright 2019 somewhatlurker, MIT license
  */
 
  // protocol info: https://gist.github.com/dogtopus/b61992cfc383434deac5fab11a458597 (best)
@@ -20,6 +20,8 @@
 #define SLIDER_FRAMING_ESCAPE 0xFD
 
 #define MAX_SLIDER_PACKET_SIZE 256
+
+#define SERIAL_BUF_SIZE 256
 
 // all known valid slider protocol commands (for use in sliderPacket)
 enum sliderCommand {
@@ -38,19 +40,39 @@ enum sliderCommand {
 // holds all data for a given data packet
 struct sliderPacket { sliderCommand Command; const byte* Data; byte DataLength; bool IsValid; };
 
-// sends a single escaped byte. return value is how much to adjust checksum by
-byte sendSliderByte(byte data);
+class segaSlider {
+private:
+  Stream* serialStream;
 
-// sends a complete slider packet (checksum is calculated automatically)
-void sendSliderPacket(const sliderPacket packet);
+  byte serialInBuf[SERIAL_BUF_SIZE];
+  int serialBufWritePos;
+  int serialBufReadPos;
+  
+  // sends a single escaped byte. return value is how much to adjust checksum by
+  byte sendSliderByte(byte data);
 
-// verify a packet's checksum is valid
-bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum);
+  // verify a packet's checksum is valid
+  bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum);
+  
+  // read and parse a packet from a ring buffer
+  // invalid packets will have IsValid set to false
+  // datalen is the full buffer size
+  // bufpos is the position to start reading from and will be automatically updated
+  // can be used with a linear buffer if bufpos is set to 0
+  // maxpos should be set to the end of currently valid data
+  sliderPacket parseRawSliderData(const byte* data, int datalen, int &bufpos, int maxpos);
+  
+public:
+  segaSlider(Stream* serial = &Serial);
+  
+  // sends a complete slider packet (checksum is calculated automatically)
+  void sendSliderPacket(const sliderPacket packet);
 
-// read and parse a packet from a ring buffer
-// invalid packets will have IsValid set to false
-// datalen is the full buffer size
-// bufpos is the position to start reading from and will be automatically updated
-// can be used with a linear buffer if bufpos is set to 0
-// maxpos should be set to the end of currently valid data
-sliderPacket parseRawSliderData(const byte* data, int datalen, int &bufpos, int maxpos);
+  // read new any new serial data into the internal buffer
+  // returns whether new data was available
+  bool readSerial();
+
+  // returns the next slider packet from the serial buffer
+  // check IsValid to see if all data has been read
+  sliderPacket readNextPacket();
+};

@@ -2,51 +2,34 @@
  * This is an implementation of sega's arcade touch slider protocol,
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
- * Copyright 2019 somewhatlurker, MIT license
+ * Requires a dedicated stream (such as `Serial`) to operate.
  * 
- * Parsing and serial writing are handled in here,
- * but other code must read data into a buffer for it.
- * This may change in the future, but it works for now.
+ * Usage: see thinithm
+ * 
+ * Copyright 2019 somewhatlurker, MIT license
  */
 
-#include "protocol.h"
+#include "segaSlider.h"
+
 
 // sends a single escaped byte. return value is how much to adjust checksum by
-byte sendSliderByte(byte data) {
+byte segaSlider::sendSliderByte(byte data) {
   if (data == SLIDER_FRAMING_ESCAPE) {
-    Serial.write(SLIDER_FRAMING_ESCAPE);
-    Serial.write(SLIDER_FRAMING_ESCAPE - 0x1);
+    serialStream->write(SLIDER_FRAMING_ESCAPE);
+    serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1);
   }
   else if (data == SLIDER_FRAMING_START) {
-    Serial.write(SLIDER_FRAMING_ESCAPE);
-    Serial.write(SLIDER_FRAMING_START - 0x1);
+    serialStream->write(SLIDER_FRAMING_ESCAPE);
+    serialStream->write(SLIDER_FRAMING_START - 0x1);
   }
   else {
-    Serial.write(data);
+    serialStream->write(data);
   }
   return 0 - data;
 }
 
-// sends a complete slider packet (checksum is calculated automatically)
-void sendSliderPacket(const sliderPacket packet) {
-  byte checksum = 0;
-
-  Serial.write(SLIDER_FRAMING_START); // packet start (should be sent raw)
-  checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
-  
-  checksum += sendSliderByte((byte)packet.Command);
-
-  checksum += sendSliderByte(packet.DataLength);
-  
-  for (byte i = 0; i < packet.DataLength; i++) {
-    checksum += sendSliderByte(packet.Data[i]);
-  }
-
-  sendSliderByte(checksum);
-}
-
 // verify a packet's checksum is valid
-bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum) {
+bool segaSlider::checkSliderPacketSum(const sliderPacket packet, byte expectedSum) {
   byte checksum = 0;
   
   checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
@@ -66,7 +49,7 @@ bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum) {
 // bufpos is the position to start reading from and will be automatically updated
 // can be used with a linear buffer if bufpos is set to 0
 // maxpos should be set to the end of currently valid data
-sliderPacket parseRawSliderData(const byte* data, int bufsize, int &bufpos, int maxpos) {
+sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &bufpos, int maxpos) {
   int startOffset = -1;
   int endOffset = -1;
   
@@ -126,3 +109,55 @@ sliderPacket parseRawSliderData(const byte* data, int bufsize, int &bufpos, int 
   
   return outPkt;
 }
+
+segaSlider::segaSlider(Stream* serial) {
+  serialStream = serial;
+}
+
+// sends a complete slider packet (checksum is calculated automatically)
+void segaSlider::sendSliderPacket(const sliderPacket packet) {
+  byte checksum = 0;
+
+  serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
+  checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
+  
+  checksum += sendSliderByte((byte)packet.Command);
+
+  checksum += sendSliderByte(packet.DataLength);
+  
+  for (byte i = 0; i < packet.DataLength; i++) {
+    checksum += sendSliderByte(packet.Data[i]);
+  }
+
+  sendSliderByte(checksum);
+}
+
+// read new any new serial data into the internal buffer
+// returns whether new data was available
+bool segaSlider::readSerial() {
+  if (serialStream->available()) {
+    // read data from serial into a ring buffer, ending at the current write position
+    // it may be somewhat better to only write until the current read position, but there's a chance that could lock everything when receiving bad data
+    // the current behaviour may drop data sometimes, but that shouldn't really matter much.. sending data is much more important and doesn't depend on this at all
+    int newWritePos = serialBufWritePos;
+    newWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SERIAL_BUF_SIZE
+    if (newWritePos >= SERIAL_BUF_SIZE)
+    {
+      newWritePos %= SERIAL_BUF_SIZE;
+      newWritePos += serialStream->readBytes(&serialInBuf[newWritePos], serialBufWritePos - newWritePos); // read from newWritePos to (old)serialBufWritePos
+    }
+    serialBufWritePos = newWritePos;
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+// returns the next slider packet from the serial buffer
+// check IsValid to see if all data has been read
+sliderPacket segaSlider::readNextPacket() {
+  // (this does avoid reading old data from past the current write position)
+  return parseRawSliderData(serialInBuf, SERIAL_BUF_SIZE, serialBufReadPos, serialBufWritePos);
+}
+

@@ -1,12 +1,8 @@
-#define SERIAL_BUF_SIZE 256
-
-#include "protocol.h"
+#include "segaSlider.h"
 #include "sliderdefs.h"
 #include "mpr121.h"
 
-byte serialInBuf[SERIAL_BUF_SIZE];
-int serialBufWritePos;
-int serialBufReadPos;
+segaSlider sliderProtocol = segaSlider(&Serial);
 
 sliderBoardType curSliderMode;
 
@@ -61,24 +57,10 @@ bool scanOn = false;
 int sleepTime = 1;
 
 void loop() {
-  if (Serial.available()) {
-
-    // read data from serial into a ring buffer, ending at the current write position
-    // it may be somewhat better to only write until the current read position, but there's a chance that could lock everything when receiving bad data
-    // the current behaviour may drop data sometimes, but that shouldn't really matter much.. sending data is much more important and doesn't depend on this at all
-    int newWritePos = serialBufWritePos;
-    newWritePos += Serial.readBytes(&serialInBuf[serialBufWritePos], SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SERIAL_BUF_SIZE
-    if (newWritePos >= SERIAL_BUF_SIZE)
-    {
-      newWritePos %= SERIAL_BUF_SIZE;
-      newWritePos += Serial.readBytes(&serialInBuf[newWritePos], serialBufWritePos - newWritePos); // read from newWritePos to (old)serialBufWritePos
-    }
-    serialBufWritePos = newWritePos;
-
-    // while valid serial data can be read, process it
-    // (this does avoid reading old data from past the current write position)
+  if (sliderProtocol.readSerial()) {
+    // while packets can be read, process them
     sliderPacket pkt;
-    while (pkt = parseRawSliderData(serialInBuf, SERIAL_BUF_SIZE, serialBufReadPos, serialBufWritePos), pkt.IsValid) {
+    while (pkt = sliderProtocol.readNextPacket(), pkt.IsValid) {
       digitalWrite(LED_BUILTIN, LOW);
       
       switch(pkt.Command) {
@@ -91,7 +73,7 @@ void loop() {
               boardinfoPacket.Data = boardInfoDataChuni;
               break;
           }
-          sendSliderPacket(boardinfoPacket);
+          sliderProtocol.sendSliderPacket(boardinfoPacket);
           break;
         case SLIDER_SCAN_ON:
           scanOn = true;
@@ -105,7 +87,7 @@ void loop() {
           //  mpr.stopMPR();
           //}
           emptyPacket.Command = SLIDER_SCAN_OFF;
-          sendSliderPacket(emptyPacket);
+          sliderProtocol.sendSliderPacket(emptyPacket);
           break;
         case SLIDER_LED:
           break; // no response needed
@@ -115,11 +97,11 @@ void loop() {
           //Serial.setTimeout(2);
           //sleepTime = 2;
           emptyPacket.Command = pkt.Command;
-          sendSliderPacket(emptyPacket);
+          sliderProtocol.sendSliderPacket(emptyPacket);
           break;
         default:
           emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
-          sendSliderPacket(emptyPacket);
+          sliderProtocol.sendSliderPacket(emptyPacket);
       }
     }
   }
@@ -127,7 +109,7 @@ void loop() {
   //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
   curSliderPatternByte = (millis()/30) % 32;
   sliderBuf[curSliderPatternByte] = 0xC0;
-  if (scanOn) sendSliderPacket(scanPacket);
+  if (scanOn) sliderProtocol.sendSliderPacket(scanPacket);
   sliderBuf[curSliderPatternByte] = 0x00;
   
   digitalWrite(LED_BUILTIN, HIGH);
