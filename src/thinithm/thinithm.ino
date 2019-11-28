@@ -110,17 +110,18 @@ void loop() {
             for (int i = 0; i < allSliderDefs[curSliderMode]->ledCount; i++) {
               int outputLed = allSliderDefs[curSliderMode]->ledMap[i];
 
-              if (i < maxPacketLeds) {
-                sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
-                sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
-                sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+              if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
+                if (i < maxPacketLeds) {
+                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
+                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
+                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+                }
+                else {
+                  sliderLeds[outputLed] = CRGB::Black;
+                }
               }
-              else {
-                sliderLeds[outputLed] = CRGB::Black;
-              }
-
-              FastLED.show();
             }
+            FastLED.show();
           }
           break; // no response needed
         default:
