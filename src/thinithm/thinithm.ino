@@ -1,6 +1,13 @@
 #include "segaSlider.h"
 #include "sliderdefs.h"
 #include "mpr121.h"
+#include "pins.h"
+#include <FastLED.h>
+
+#define NUM_SLIDER_LEDS 32
+CRGB sliderLeds[NUM_SLIDER_LEDS];
+
+#define RGB_BRIGHTNESS 127
 
 segaSlider sliderProtocol = segaSlider(&Serial);
 
@@ -48,6 +55,9 @@ void setup() {
   //  mpr.autoConfigUSL = 256 * (3200 - 700) / 3200; // set autoconfig for 3.2V
   //}
 
+  // SK6812 should be WS2812(B) compatible, but FastLED has it natively anyway
+  FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
+
   Serial.setTimeout(0.01);
   Serial.begin(115200);
 }
@@ -57,6 +67,8 @@ bool scanOn = false;
 int sleepTime = 1;
 
 void loop() {
+  curSliderMode = digitalRead(PIN_MODESEL) ? SLIDER_TYPE_CHUNI : SLIDER_TYPE_DIVA;
+  
   if (sliderProtocol.readSerial()) {
     // while packets can be read, process them
     sliderPacket pkt;
@@ -90,6 +102,26 @@ void loop() {
           sliderProtocol.sendSliderPacket(emptyPacket);
           break;
         case SLIDER_LED:
+          if (pkt.DataLength > 0) {
+            FastLED.setBrightness(pkt.Data[0] * RGB_BRIGHTNESS / 63); // this seems to max out at 0x3f (63), use that for division
+
+            int maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
+            
+            for (int i = 0; i < allSliderDefs[curSliderMode]->ledCount; i++) {
+              int outputLed = allSliderDefs[curSliderMode]->ledMap[i];
+
+              if (i < maxPacketLeds) {
+                sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
+                sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
+                sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+              }
+              else {
+                sliderLeds[outputLed] = CRGB::Black;
+              }
+
+              FastLED.show();
+            }
+          }
           break; // no response needed
         default:
           emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands

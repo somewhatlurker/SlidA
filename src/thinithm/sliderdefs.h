@@ -23,6 +23,7 @@ struct sliderDef {
   
   // ledMap is indexed by the protocol input LED number
   // it stores the raw hw LED number that should take the value
+  //   assume 32 hw leds
   // blending isn't supported
   const byte ledMap[SLIDER_BOARDS_MAX_LEDS];
 };
