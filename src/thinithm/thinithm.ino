@@ -26,12 +26,15 @@ byte boardInfoDataDiva[18] = {0x31, 0x35, 0x32, 0x37, 0x35, 0x20, 0x20, 0x20, 0x
 byte boardInfoDataChuni[18] = {0x31, 0x35, 0x33, 0x33, 0x30, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x37, 0x31, 0x32, 0xFF, 0x90, 0x00, 0x64};
 sliderPacket boardinfoPacket;
 
-//mpr121 mprs[4] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
+//#define NUM_MPRS 4
+//mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PIN_MODESEL, INPUT_PULLUP);
+  pinMode(PIN_SLIDER_IRQ, INPUT);
+  
   digitalWrite(LED_BUILTIN, LOW);
-  pinMode(3, INPUT);
   
   scanPacket.Command = SLIDER_SCAN_REPORT;
   scanPacket.Data = sliderBuf;
@@ -50,7 +53,7 @@ void setup() {
 
   //Wire.begin();
   //Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
-  //for (mpr121 mpr : mprs) {
+  //for (mpr121 &mpr : mprs) {
   //  mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
   //  mpr.autoConfigUSL = 256 * (3200 - 700) / 3200; // set autoconfig for 3.2V
   //}
@@ -65,9 +68,10 @@ void setup() {
 int curSliderPatternByte;
 bool scanOn = false;
 int sleepTime = 1;
+unsigned long lastSliderSendMillis;
 
 void loop() {
-  curSliderMode = digitalRead(PIN_MODESEL) ? SLIDER_TYPE_CHUNI : SLIDER_TYPE_DIVA;
+  curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
   
   if (sliderProtocol.readSerial()) {
     // while packets can be read, process them
@@ -87,20 +91,23 @@ void loop() {
           }
           sliderProtocol.sendSliderPacket(boardinfoPacket);
           break;
+          
         case SLIDER_SCAN_ON:
           scanOn = true;
-          //for (mpr121 mpr : mprs) {
+          //for (mpr121 &mpr : mprs) {
           //  mpr.startMPR(12);
           //}
           break; // no response needed
+          
         case SLIDER_SCAN_OFF:
           scanOn = false;
-          //for (mpr121 mpr : mprs) {
+          //for (mpr121 &mpr : mprs) {
           //  mpr.stopMPR();
           //}
           emptyPacket.Command = SLIDER_SCAN_OFF;
           sliderProtocol.sendSliderPacket(emptyPacket);
           break;
+          
         case SLIDER_LED:
           if (pkt.DataLength > 0) {
             FastLED.setBrightness(pkt.Data[0] * RGB_BRIGHTNESS / 63); // this seems to max out at 0x3f (63), use that for division
@@ -124,6 +131,7 @@ void loop() {
             FastLED.show();
           }
           break; // no response needed
+          
         default:
           emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
           sliderProtocol.sendSliderPacket(emptyPacket);
@@ -131,11 +139,47 @@ void loop() {
     }
   }
 
-  //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
-  curSliderPatternByte = (millis()/30) % 32;
-  sliderBuf[curSliderPatternByte] = 0xC0;
-  if (scanOn) sliderProtocol.sendSliderPacket(scanPacket);
-  sliderBuf[curSliderPatternByte] = 0x00;
+  if ( scanOn &&
+       ( (digitalRead(PIN_SLIDER_IRQ) == LOW) ||
+         ((millis() - lastSliderSendMillis) > 250) ) // if no interrupt recently, send a keep alive
+     )
+  {
+    //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
+    curSliderPatternByte = (millis()/30) % 32;
+    sliderBuf[curSliderPatternByte] = 0xC0;
+
+    /*
+    // clear the output buffer
+    memset(sliderBuf, 0, sizeof(sliderBuf));
+
+    static const int numInputTouches = 12 * NUM_MPRS;
+    static bool allTouches[numInputTouches];
+
+    // read all mpr touches into allTouches
+    for (int i = 0; i < NUM_MPRS; i++) {
+      mpr121 &mpr = mprs[i];
+      bool* touches = mpr.readTouchState();
+      memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+    }
+
+    // apply touch data to output buffer
+    for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+      for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+        int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+  
+        if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+          sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+        }
+      }
+    }
+    */
+    
+    sliderProtocol.sendSliderPacket(scanPacket);
+    
+    sliderBuf[curSliderPatternByte] = 0x00;
+    
+    lastSliderSendMillis = millis();
+  }
   
   digitalWrite(LED_BUILTIN, HIGH);
   delay(sleepTime);

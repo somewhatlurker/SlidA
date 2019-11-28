@@ -7,6 +7,7 @@
 
 #define SLIDER_BOARDS_MAX_KEYS 32
 #define SLIDER_BOARDS_MAX_LEDS 32
+#define SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT 2
 
 struct sliderDef {
   // number of keys in the protocol
@@ -16,7 +17,7 @@ struct sliderDef {
   // it stores the raw hw key numbers that should affect the output
   //   note: hw numbers assume 48 inputs
   // allow two raw keys per output to support merging rows
-  const byte keyMap[SLIDER_BOARDS_MAX_KEYS][2];
+  const byte keyMap[SLIDER_BOARDS_MAX_KEYS][SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT];
   
   // number of LEDs in the protocol
   const byte ledCount;
