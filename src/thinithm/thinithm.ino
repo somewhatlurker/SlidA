@@ -91,14 +91,6 @@ void loop() {
           break;
         case SLIDER_LED:
           break; // no response needed
-        case SLIDER_UNKNOWN_0A:
-          // abuse this to change some timing parameters
-          // not sure what the command means, but it seems to run after init in diva
-          //Serial.setTimeout(2);
-          //sleepTime = 2;
-          emptyPacket.Command = pkt.Command;
-          sliderProtocol.sendSliderPacket(emptyPacket);
-          break;
         default:
           emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
           sliderProtocol.sendSliderPacket(emptyPacket);
