@@ -45,9 +45,9 @@ class segaSlider {
 private:
   Stream* serialStream;
 
-  byte serialInBuf[SERIAL_BUF_SIZE];
-  int serialBufWritePos;
-  int serialBufReadPos;
+  byte serialInBuf[SERIAL_BUF_SIZE]; // ring buf
+  int serialBufWritePos; // head
+  int serialBufReadPos; // tail
   
   // sends a single escaped byte. return value is how much to adjust checksum by
   byte sendSliderByte(byte data);

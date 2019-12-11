@@ -46,9 +46,9 @@ bool segaSlider::checkSliderPacketSum(const sliderPacket packet, byte expectedSu
 // read and parse a packet from a ring buffer
 // invalid packets will have IsValid set to false
 // bufsize is the full buffer size
-// bufpos is the position to start reading from and will be automatically updated
+// bufpos is the position to start reading from and will be automatically updated (tail)
 // can be used with a linear buffer if bufpos is set to 0
-// maxpos should be set to the end of currently valid data
+// maxpos should be set to the end of currently valid data (head)
 sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &bufpos, int maxpos) {
   int startOffset = -1;
   int endOffset = -1;
@@ -65,7 +65,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
   maxpos %= bufsize;
 
   // find the beginning and end of a packet
-  for (int i = bufpos; i != (bufpos - 1) % bufsize && i != maxpos; i++, i %= bufsize) {
+  for (int i = bufpos; (i + 1) % bufsize != bufpos && i != maxpos; i++, i %= bufsize) {
     if (data[i] == SLIDER_FRAMING_START) {
       if (startOffset == -1)
       {
@@ -88,6 +88,8 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
   {
     if (data[i] == SLIDER_FRAMING_ESCAPE) { // esscaped byte sequence
       i++; i %= bufsize; // skip SLIDER_FRAMING_ESCAPE
+      if (i == endOffset) // check data hasn't ended
+        break;
       packetData[outpos] = data[i] + 1;
     }
     else {
