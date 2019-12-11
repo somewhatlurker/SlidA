@@ -9,6 +9,32 @@ CRGB sliderLeds[NUM_SLIDER_LEDS];
 
 #define RGB_BRIGHTNESS 127
 
+enum errorState : byte {
+  ERRORSTATE_NONE = 0,
+  ERRORSTATE_SERIAL_RX = 1,
+  ERRORSTATE_PACKET_CHECKSUM = 2,
+  ERRORSTATE_PACKET_OK = 4,
+};
+errorState operator |(errorState a, errorState b)
+{
+    return static_cast<errorState>(static_cast<int>(a) | static_cast<int>(b));
+}
+errorState operator |=(errorState &a, errorState b)
+{
+    return a = (a | b);
+}
+
+errorState curError;
+
+#ifdef LED_BUILTIN_TX
+  #define STATUS_LED_BASIC_PIN LED_BUILTIN_TX // pro micro has no LED_BUILTIN, so use the TX led
+  #define STATUS_LED_USES_RXTX 1
+#else
+  #define STATUS_LED_BASIC_PIN LED_BUILTIN
+#endif
+#define STATUS_LED_BASIC_ERRORS (ERRORSTATE_PACKET_OK)
+
+
 segaSlider sliderProtocol = segaSlider(&Serial);
 
 sliderBoardType curSliderMode;
@@ -29,25 +55,8 @@ sliderPacket boardinfoPacket;
 //#define NUM_MPRS 4
 //mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
-enum errorState : byte {
-  ERRORSTATE_NONE = 0,
-  ERRORSTATE_SERIAL_RX = 1,
-  ERRORSTATE_PACKET_CHECKSUM = 2,
-  ERRORSTATE_PACKET_OK = 4,
-};
-errorState operator |(errorState a, errorState b)
-{
-    return static_cast<errorState>(static_cast<int>(a) | static_cast<int>(b));
-}
-errorState operator |=(errorState &a, errorState b)
-{
-    return a = (a | b);
-}
-
-errorState curError;
-
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(STATUS_LED_BASIC_PIN, OUTPUT);
   pinMode(PIN_MODESEL, INPUT_PULLUP);
   pinMode(PIN_SLIDER_IRQ, INPUT);
   
@@ -89,7 +98,7 @@ unsigned long lastSliderSendMillis;
 unsigned long lastSerialRecvMillis;
 
 void loop() {
-  curError |= ERRORSTATE_NONE;
+  curError = ERRORSTATE_NONE;
   curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
   
   if (sliderProtocol.readSerial()) {
@@ -105,7 +114,6 @@ void loop() {
       }
 
       curError |= ERRORSTATE_PACKET_OK;
-      digitalWrite(LED_BUILTIN, LOW);
       
       switch(pkt.Command) {
         case SLIDER_BOARDINFO:
@@ -216,7 +224,21 @@ void loop() {
     
     lastSliderSendMillis = millis();
   }
+
+  if (STATUS_LED_BASIC_ERRORS & curError)
+  {
+    #ifdef STATUS_LED_USES_RXTX
+      pinMode(STATUS_LED_BASIC_PIN, OUTPUT); // set as OUTPUT to re-enable normal operation
+    #endif
+    digitalWrite(STATUS_LED_BASIC_PIN, LOW);
+  }
+  else
+  {
+    #ifdef STATUS_LED_USES_RXTX
+      pinMode(STATUS_LED_BASIC_PIN, INPUT); // set as INPUT to disable normal operation
+    #endif
+    digitalWrite(STATUS_LED_BASIC_PIN, HIGH);
+  }
   
-  digitalWrite(LED_BUILTIN, HIGH);
   delay(sleepTime);
 }

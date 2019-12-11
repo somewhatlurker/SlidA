@@ -21,7 +21,8 @@
 
 #define MAX_SLIDER_PACKET_SIZE 256
 
-#define SERIAL_BUF_SIZE 256
+#define SERIAL_BUF_SIZE 256 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
+                            // alternatively, SERIAL_RX_BUFFER_SIZE can be defined by the sketch
 
 // all known valid slider protocol commands (for use in sliderPacket)
 enum sliderCommand {
