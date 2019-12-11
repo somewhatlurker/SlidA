@@ -29,6 +29,23 @@ sliderPacket boardinfoPacket;
 //#define NUM_MPRS 4
 //mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
+enum errorState : byte {
+  ERRORSTATE_NONE = 0,
+  ERRORSTATE_SERIAL_RX = 1,
+  ERRORSTATE_PACKET_CHECKSUM = 2,
+  ERRORSTATE_PACKET_OK = 4,
+};
+errorState operator |(errorState a, errorState b)
+{
+    return static_cast<errorState>(static_cast<int>(a) | static_cast<int>(b));
+}
+errorState operator |=(errorState &a, errorState b)
+{
+    return a = (a | b);
+}
+
+errorState curError;
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_MODESEL, INPUT_PULLUP);
@@ -69,14 +86,25 @@ int curSliderPatternByte;
 bool scanOn = false;
 int sleepTime = 1;
 unsigned long lastSliderSendMillis;
+unsigned long lastSerialRecvMillis;
 
 void loop() {
+  curError |= ERRORSTATE_NONE;
   curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
   
   if (sliderProtocol.readSerial()) {
+    lastSerialRecvMillis = millis();
+    
     // while packets can be read, process them
     sliderPacket pkt;
-    while (pkt = sliderProtocol.readNextPacket(), pkt.IsValid) {
+    while (true) {
+      pkt = sliderProtocol.readNextPacket();
+      if (!pkt.IsValid) {
+        curError |= ERRORSTATE_PACKET_CHECKSUM;
+        break;
+      }
+
+      curError |= ERRORSTATE_PACKET_OK;
       digitalWrite(LED_BUILTIN, LOW);
       
       switch(pkt.Command) {
@@ -137,6 +165,14 @@ void loop() {
           sliderProtocol.sendSliderPacket(emptyPacket);
       }
     }
+  }
+
+  if ((millis() - lastSerialRecvMillis) > 10000) { // disable scan and set error if serial is dead
+    scanOn = false;
+    //for (mpr121 &mpr : mprs) {
+    //  mpr.stopMPR();
+    //}
+    curError |= ERRORSTATE_SERIAL_RX;
   }
 
   if ( scanOn &&
