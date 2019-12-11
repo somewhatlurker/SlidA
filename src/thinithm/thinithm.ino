@@ -26,13 +26,22 @@ errorState operator |=(errorState &a, errorState b)
 
 errorState curError;
 
-#ifdef LED_BUILTIN_TX
-  #define STATUS_LED_BASIC_PIN LED_BUILTIN_TX // pro micro has no LED_BUILTIN, so use the TX led
-  #define STATUS_LED_USES_RXTX 1
+#ifdef LED_BUILTIN_RX
+  #define STATUS_LED_BASIC_1_PIN LED_BUILTIN_RX // pro micro has no LED_BUILTIN, so use the TX led
+  #define STATUS_LED_BASIC_1_USES_RXTX 1
 #else
-  #define STATUS_LED_BASIC_PIN LED_BUILTIN
+  #define STATUS_LED_BASIC_1_PIN LED_BUILTIN
 #endif
-#define STATUS_LED_BASIC_ERRORS (ERRORSTATE_PACKET_OK)
+
+#ifdef LED_BUILTIN_TX
+  #define STATUS_LED_BASIC_2_PIN LED_BUILTIN_TX // pro micro has no LED_BUILTIN, so use the TX led
+  #define STATUS_LED_BASIC_2_USES_RXTX 1
+#else
+  #define STATUS_LED_BASIC_2_PIN LED_BUILTIN
+#endif
+
+#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_RX | ERRORSTATE_PACKET_CHECKSUM)
+#define STATUS_LED_BASIC_2_ERRORS (ERRORSTATE_PACKET_OK)
 
 
 segaSlider sliderProtocol = segaSlider(&Serial);
@@ -56,7 +65,8 @@ sliderPacket boardinfoPacket;
 //mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 void setup() {
-  pinMode(STATUS_LED_BASIC_PIN, OUTPUT);
+  pinMode(STATUS_LED_BASIC_1_PIN, OUTPUT);
+  pinMode(STATUS_LED_BASIC_2_PIN, OUTPUT);
   pinMode(PIN_MODESEL, INPUT_PULLUP);
   pinMode(PIN_SLIDER_IRQ, INPUT);
   
@@ -225,19 +235,30 @@ void loop() {
     lastSliderSendMillis = millis();
   }
 
-  if (STATUS_LED_BASIC_ERRORS & curError)
-  {
-    #ifdef STATUS_LED_USES_RXTX
-      pinMode(STATUS_LED_BASIC_PIN, OUTPUT); // set as OUTPUT to re-enable normal operation
+  if (STATUS_LED_BASIC_1_ERRORS & curError) {
+    #ifdef STATUS_LED_BASIC_1_USES_RXTX
+      pinMode(STATUS_LED_BASIC_1_PIN, OUTPUT); // set as OUTPUT to re-enable normal operation
     #endif
-    digitalWrite(STATUS_LED_BASIC_PIN, LOW);
+    digitalWrite(STATUS_LED_BASIC_1_PIN, LOW);
   }
-  else
-  {
-    #ifdef STATUS_LED_USES_RXTX
-      pinMode(STATUS_LED_BASIC_PIN, INPUT); // set as INPUT to disable normal operation
+  else {
+    #ifdef STATUS_LED_BASIC_1_USES_RXTX
+      pinMode(STATUS_LED_BASIC_1_PIN, INPUT); // set as INPUT to disable normal operation
     #endif
-    digitalWrite(STATUS_LED_BASIC_PIN, HIGH);
+    digitalWrite(STATUS_LED_BASIC_1_PIN, HIGH);
+  }
+
+  if (STATUS_LED_BASIC_2_ERRORS & curError) {
+    #ifdef STATUS_LED_BASIC_2_USES_RXTX
+      pinMode(STATUS_LED_BASIC_2_PIN, OUTPUT); // set as OUTPUT to re-enable normal operation
+    #endif
+    digitalWrite(STATUS_LED_BASIC_2_PIN, LOW);
+  }
+  else {
+    #ifdef STATUS_LED_BASIC_2_USES_RXTX
+      pinMode(STATUS_LED_BASIC_2_PIN, INPUT); // set as INPUT to disable normal operation
+    #endif
+    digitalWrite(STATUS_LED_BASIC_2_PIN, HIGH);
   }
   
   delay(sleepTime);
