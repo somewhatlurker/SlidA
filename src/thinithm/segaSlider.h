@@ -58,9 +58,9 @@ private:
   // read and parse a packet from a ring buffer
   // invalid packets will have IsValid set to false
   // datalen is the full buffer size
-  // bufpos is the position to start reading from and will be automatically updated
+  // bufpos is the position to start reading from and will be automatically updated (tail)
   // can be used with a linear buffer if bufpos is set to 0
-  // maxpos should be set to the end of currently valid data
+  // maxpos should be set to the end of currently valid data (head)
   sliderPacket parseRawSliderData(const byte* data, int datalen, int &bufpos, int maxpos);
   
 public:

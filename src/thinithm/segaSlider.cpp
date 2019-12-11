@@ -83,7 +83,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
   if (endOffset == -1) endOffset = maxpos; // if no second split point is found, use until maxpos
 
   // unescape and copy bytes
-  int outpos = 0;
+  int outpos = 0; // define in this scope so it can be checked later
   for (int i = startOffset; i != endOffset && outpos < MAX_SLIDER_PACKET_SIZE; i++, i %= bufsize)
   {
     if (data[i] == SLIDER_FRAMING_ESCAPE) { // esscaped byte sequence
@@ -102,7 +102,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
   outPkt.DataLength = packetData[2];
   outPkt.Data = &packetData[3];
 
-  if (outPkt.DataLength > MAX_SLIDER_PACKET_SIZE + 3) // probably not necessary
+  if (outpos != outPkt.DataLength)
     outPkt.IsValid = false;
   else
     outPkt.IsValid = checkSliderPacketSum(outPkt, packetData[outPkt.DataLength + 3]);
