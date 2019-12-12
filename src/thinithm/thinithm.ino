@@ -118,8 +118,9 @@ void loop() {
     sliderPacket pkt;
     while (true) {
       pkt = sliderProtocol.readNextPacket();
-      if (!pkt.IsValid && pkt.Command != sliderCommand)0) { // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-        curError |= ERRORSTATE_PACKET_CHECKSUM;
+      if (!pkt.IsValid) {
+        if (pkt.Command != (sliderCommand)0) // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
+          curError |= ERRORSTATE_PACKET_CHECKSUM;
         break;
       }
 
