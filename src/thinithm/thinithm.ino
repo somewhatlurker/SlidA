@@ -27,7 +27,7 @@ errorState operator |=(errorState &a, errorState b)
 errorState curError;
 
 #ifdef LED_BUILTIN_RX
-  #define STATUS_LED_BASIC_1_PIN LED_BUILTIN_RX // pro micro has no LED_BUILTIN, so use the TX led
+  #define STATUS_LED_BASIC_1_PIN LED_BUILTIN_RX // pro micro has no LED_BUILTIN, so use the RX led
   #define STATUS_LED_BASIC_1_USES_RXTX 1
 #else
   #define STATUS_LED_BASIC_1_PIN LED_BUILTIN
@@ -118,7 +118,7 @@ void loop() {
     sliderPacket pkt;
     while (true) {
       pkt = sliderProtocol.readNextPacket();
-      if (!pkt.IsValid) {
+      if (!pkt.IsValid && pkt.Command != sliderCommand)0) { // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
         curError |= ERRORSTATE_PACKET_CHECKSUM;
         break;
       }

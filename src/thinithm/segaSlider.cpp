@@ -49,6 +49,8 @@ bool segaSlider::checkSliderPacketSum(const sliderPacket packet, byte expectedSu
 // bufpos is the position to start reading from and will be automatically updated (tail)
 // can be used with a linear buffer if bufpos is set to 0
 // maxpos should be set to the end of currently valid data (head)
+// check for errors using IsValid on the output packet.
+//   if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
 sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &bufpos, int maxpos) {
   int startOffset = -1;
   int endOffset = -1;
@@ -98,14 +100,14 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
     outpos++;
   }
 
-  outPkt.Command = (sliderCommand)packetData[1];
   outPkt.DataLength = packetData[2];
-  outPkt.Data = &packetData[3];
 
-  if (outpos != outPkt.DataLength)
-    outPkt.IsValid = false;
-  else
+  if (outpos >= outPkt.DataLength) { // read enough data
+    outPkt.Command = (sliderCommand)packetData[1];
+    outPkt.Data = &packetData[3];
+
     outPkt.IsValid = checkSliderPacketSum(outPkt, packetData[outPkt.DataLength + 3]);
+  }
 
   if (forceAdvance || outPkt.IsValid) bufpos = endOffset;
   
