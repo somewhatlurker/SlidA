@@ -61,8 +61,8 @@ byte boardInfoDataDiva[18] = {0x31, 0x35, 0x32, 0x37, 0x35, 0x20, 0x20, 0x20, 0x
 byte boardInfoDataChuni[18] = {0x31, 0x35, 0x33, 0x33, 0x30, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x37, 0x31, 0x32, 0xFF, 0x90, 0x00, 0x64};
 sliderPacket boardinfoPacket;
 
-//#define NUM_MPRS 4
-//mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
+#define NUM_MPRS 4
+mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 void setup() {
   pinMode(STATUS_LED_BASIC_1_PIN, OUTPUT);
@@ -87,6 +87,7 @@ void setup() {
   boardinfoPacket.DataLength = 18;
   boardinfoPacket.IsValid = true;
 
+  delay(10); // make sure MPR121s have booted
   //Wire.begin();
   //Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
   //for (mpr121 &mpr : mprs) {

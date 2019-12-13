@@ -19,7 +19,7 @@
 #define SLIDER_FRAMING_START 0xFF
 #define SLIDER_FRAMING_ESCAPE 0xFD
 
-#define MAX_SLIDER_PACKET_SIZE 256
+#define MAX_SLIDER_PACKET_SIZE 128 // max expected in practice is 100 (4 + 32*3) for LED data
 
 #define SLIDER_SERIAL_TEXT_MODE false
 

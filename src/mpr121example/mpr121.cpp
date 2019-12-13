@@ -21,6 +21,8 @@
  *   reading data isn't thread-safe, but that shouldn't be an issue
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
+ *   
+ *   make sure to allow some time (10ms should be plenty) for the MPR121 to start
  * 
  * Copyright 2019 somewhatlurker, MIT license
  */
@@ -213,9 +215,10 @@ void mpr121::setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RE
 mpr121::mpr121(byte addr, TwoWire *wire)
 {
   // ensure the mpr device has had time to get ready
-  if (millis() < 10) {
-    delay(10);
-  }
+  // no check because pro micro sucks
+  // if (millis() < 10) {
+  //   delay(10);
+  // }
   
   i2cAddr = addr;
   i2cWire = wire;

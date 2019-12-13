@@ -21,6 +21,8 @@
  *   reading data isn't thread-safe, but that shouldn't be an issue
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
+ *   
+ *   make sure to allow some time (10ms should be plenty) for the MPR121 to start
  * 
  * Copyright 2019 somewhatlurker, MIT license
  */

@@ -122,7 +122,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
 
   outPkt.DataLength = packetData[2];
 
-  if (outpos >= outPkt.DataLength + 3) { // read enough data
+  if (outpos >= outPkt.DataLength + 4) { // read enough data
     outPkt.Command = (sliderCommand)packetData[1];
     outPkt.Data = &packetData[3];
 

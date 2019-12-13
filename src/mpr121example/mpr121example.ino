@@ -7,6 +7,7 @@
 mpr121 mprs[NUM_MPRS] = NULL;
 
 void setup() {
+  delay(10); // make sure MPR121s have booted
   Wire.begin();
   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
   for (int i = 0; i < NUM_MPRS; i++) {
