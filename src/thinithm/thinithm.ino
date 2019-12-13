@@ -10,10 +10,10 @@ CRGB sliderLeds[NUM_SLIDER_LEDS];
 #define RGB_BRIGHTNESS 127
 
 enum errorState : byte {
-  ERRORSTATE_NONE = 0,
-  ERRORSTATE_SERIAL_RX = 1,
-  ERRORSTATE_PACKET_CHECKSUM = 2,
-  ERRORSTATE_PACKET_OK = 4,
+  ERRORSTATE_NONE = 0, // no error, used for resetting state
+  ERRORSTATE_SERIAL_RX = 1, // not receiving serial data (timeout)
+  ERRORSTATE_PACKET_CHECKSUM = 2, // at least one invalid packet (due to checksum error) was received
+  ERRORSTATE_PACKET_OK = 4, // at least one valid packet was received
 };
 errorState operator |(errorState a, errorState b)
 {
@@ -187,10 +187,12 @@ void loop() {
   }
 
   if ((millis() - lastSerialRecvMillis) > 10000) { // disable scan and set error if serial is dead
-    scanOn = false;
-    //for (mpr121 &mpr : mprs) {
-    //  mpr.stopMPR();
-    //}
+    if (scanOn) {
+      scanOn = false;
+      //for (mpr121 &mpr : mprs) {
+      //  mpr.stopMPR();
+      //}
+    }
     curError |= ERRORSTATE_SERIAL_RX;
   }
 
