@@ -21,8 +21,13 @@
 
 #define MAX_SLIDER_PACKET_SIZE 256
 
-#define SERIAL_BUF_SIZE 256 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
-                            // alternatively, SERIAL_RX_BUFFER_SIZE can be defined by the sketch
+#ifndef SLIDER_SERIAL_TEXT_MODE
+#define SLIDER_SERIAL_TEXT_MODE false
+#endif
+
+// pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
+// alternatively, SERIAL_RX_BUFFER_SIZE can be defined by the sketch
+#define SLIDER_SERIAL_BUF_SIZE 256
 
 // all known valid slider protocol commands (for use in sliderPacket)
 enum sliderCommand {
@@ -45,7 +50,7 @@ class segaSlider {
 private:
   Stream* serialStream;
 
-  byte serialInBuf[SERIAL_BUF_SIZE]; // ring buf
+  byte serialInBuf[SLIDER_SERIAL_BUF_SIZE]; // ring buf
   int serialBufWritePos; // head
   int serialBufReadPos; // tail
   
