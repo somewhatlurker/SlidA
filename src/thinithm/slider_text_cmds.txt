@@ -1,0 +1,13 @@
+this file contains some useful commands for testing in serial console with SLIDER_SERIAL_TEXT_MODE
+make sure to keep the trailing spaces
+
+// SLIDER_DETECT
+255 16 0 241 
+// SLIDER_BOARDINFO
+255 240 0 17 
+// SLIDER_LED (make one LED green)
+255 2 3 0 254 0 254 
+// SLIDER_SCAN_ON
+255 3 0 254 
+// SLIDER_SCAN_OFF
+255 4 0 253 252 

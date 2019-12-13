@@ -21,9 +21,7 @@
 
 #define MAX_SLIDER_PACKET_SIZE 256
 
-#ifndef SLIDER_SERIAL_TEXT_MODE
 #define SLIDER_SERIAL_TEXT_MODE false
-#endif
 
 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
 // alternatively, SERIAL_RX_BUFFER_SIZE can be defined by the sketch

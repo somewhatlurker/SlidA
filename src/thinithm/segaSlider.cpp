@@ -122,7 +122,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
 
   outPkt.DataLength = packetData[2];
 
-  if (outpos >= outPkt.DataLength) { // read enough data
+  if (outpos >= outPkt.DataLength + 3) { // read enough data
     outPkt.Command = (sliderCommand)packetData[1];
     outPkt.Data = &packetData[3];
 
@@ -142,7 +142,13 @@ segaSlider::segaSlider(Stream* serial) {
 void segaSlider::sendSliderPacket(const sliderPacket packet) {
   byte checksum = 0;
 
-  serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
+  if (SLIDER_SERIAL_TEXT_MODE) {
+    serialStream->write(String(SLIDER_FRAMING_START).c_str());
+    serialStream->write(" ");
+  }
+  else {
+    serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
+  }
   checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
   
   checksum += sendSliderByte((byte)packet.Command);
@@ -154,6 +160,9 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
   }
 
   sendSliderByte(checksum);
+
+  if (SLIDER_SERIAL_TEXT_MODE)
+    serialStream->write("\n");
 }
 
 // read new any new serial data into the internal buffer
@@ -186,6 +195,9 @@ bool segaSlider::readSerial() {
             if (newWritePos == serialBufWritePos)
               break; // don't overwrite data that was only just read
           }
+        }
+        else {
+          readlen++;
         }
       }
       serialBufWritePos = newWritePos;
