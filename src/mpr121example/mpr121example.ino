@@ -14,7 +14,7 @@ void setup() {
     mpr121 &mpr = mprs[i];
     mpr = mpr121(0x5a + i);
     mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
-    mpr.autoConfigUSL = 256 * (3200 - 700) / 3200; // set autoconfig for 3.2V
+    mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
     mpr.proxEnable = PROXIMITY_ENABLE ? MPR_ELEPROX_0_TO_11 : MPR_ELEPROX_DISABLED;
     mpr.startMPR(12);
   }

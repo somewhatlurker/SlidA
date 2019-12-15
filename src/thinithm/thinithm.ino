@@ -112,7 +112,7 @@ void setup() {
   //Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
   //for (mpr121 &mpr : mprs) {
   //  mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
-  //  mpr.autoConfigUSL = 256 * (3200 - 700) / 3200; // set autoconfig for 3.2V
+  //  mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
   //}
 
 

@@ -9,7 +9,7 @@
  *   mpr121 mpr = mpr121(address);
  *   // optionally set custom parameters
  *   // for 4ms response time (default is 8): mpr.ESI = MPR_ESI_1;
- *   // for better autoconfig: mpr.autoConfigUSL = 256 * (supplyMillivolts - 700) / supplyMillivolts;
+ *   // for better autoconfig: mpr.autoConfigUSL = 256L * (supplyMillivolts - 700) / supplyMillivolts;
  *   
  *   Wire.begin();
  *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
