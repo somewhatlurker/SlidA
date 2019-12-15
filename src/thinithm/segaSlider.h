@@ -51,6 +51,12 @@ private:
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE]; // ring buf
   int serialBufWritePos; // head
   int serialBufReadPos; // tail
+
+  // some variables are used to convert incoming text to bytes if necessary
+  #if SLIDER_SERIAL_TEXT_MODE
+    char serialTextBuf[8];
+    byte serialTextReadlen = 0; // the number of chars already read into serialTextBuf
+  #endif // SLIDER_SERIAL_TEXT_MODE
   
   // sends a single escaped byte. return value is how much to adjust checksum by
   byte sendSliderByte(byte data);

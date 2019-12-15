@@ -14,7 +14,9 @@
 
 // sends a single escaped byte. return value is how much to adjust checksum by
 byte segaSlider::sendSliderByte(byte data) {
-  if (SLIDER_SERIAL_TEXT_MODE) {
+  // the special SLIDER_FRAMING_ESCAPE and SLIDER_FRAMING_START values must be escaped
+  // escaped bytes are represented as SLIDER_FRAMING_ESCAPE followed by the original byte minus 1
+  #if SLIDER_SERIAL_TEXT_MODE
     if (data == SLIDER_FRAMING_ESCAPE) {
       serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
       serialStream->write(" ");
@@ -31,8 +33,8 @@ byte segaSlider::sendSliderByte(byte data) {
       serialStream->write(String(data).c_str());
       serialStream->write(" ");
     }
-  }
-  else {
+    
+  #else // SLIDER_SERIAL_TEXT_MODE
     if (data == SLIDER_FRAMING_ESCAPE) {
       serialStream->write(SLIDER_FRAMING_ESCAPE);
       serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1);
@@ -44,8 +46,10 @@ byte segaSlider::sendSliderByte(byte data) {
     else {
       serialStream->write(data);
     }
-  }
-  return 0 - data;
+    
+  #endif // SLIDER_SERIAL_TEXT_MODE
+  
+  return 0 - data; // ckecksum is based on unescaped data
 }
 
 // verify a packet's checksum is valid
@@ -142,13 +146,15 @@ segaSlider::segaSlider(Stream* serial) {
 void segaSlider::sendSliderPacket(const sliderPacket packet) {
   byte checksum = 0;
 
-  if (SLIDER_SERIAL_TEXT_MODE) {
-    serialStream->write(String(SLIDER_FRAMING_START).c_str());
+  #if SLIDER_SERIAL_TEXT_MODE
+    serialStream->write(String(SLIDER_FRAMING_START).c_str()); // packet start (should be sent raw)
     serialStream->write(" ");
-  }
-  else {
+  
+  #else // SLIDER_SERIAL_TEXT_MODE
     serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
-  }
+    
+  #endif // SLIDER_SERIAL_TEXT_MODE
+  
   checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
   
   checksum += sendSliderByte((byte)packet.Command);
@@ -161,8 +167,9 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
 
   sendSliderByte(checksum);
 
-  if (SLIDER_SERIAL_TEXT_MODE)
+  #if SLIDER_SERIAL_TEXT_MODE
     serialStream->write("\n");
+  #endif // SLIDER_SERIAL_TEXT_MODE
 }
 
 // read new any new serial data into the internal buffer
@@ -172,24 +179,20 @@ bool segaSlider::readSerial() {
     // read data from serial into a ring buffer, ending at the current write position
     // it may be somewhat better to only write until the current read position, but there's a chance that could lock everything when receiving bad data
     // the current behaviour may drop data sometimes, but that shouldn't really matter much.. sending data is much more important and doesn't depend on this at all
-    if (SLIDER_SERIAL_TEXT_MODE) {
-      static char buf[8];
-      static byte readlen = 0;
-
+    #if SLIDER_SERIAL_TEXT_MODE
       int newWritePos = serialBufWritePos;
       
       // while serial is available, read space separated strings into buffer bytes
-      // note that buf and readlen are static, so this should work even if not a full 'byte' can be read at a time
       while (serialStream->available()) {
-        if (readlen >= sizeof(buf) / sizeof(buf[0]))
-          readlen = 0; // reset buf pos if it overruns (this shouldn't happen)
+        if (serialTextReadlen >= sizeof(serialTextBuf) / sizeof(serialTextBuf[0]))
+          serialTextReadlen = 0; // reset serialTextBuf pos if it overruns (this shouldn't happen)
         
-        buf[readlen] = serialStream->read();
-        if (buf[readlen] == ' ') { // if found a space (end of byte)
-          buf[readlen] = 0; // null-terminate buffer
-          if (readlen > 0) {
-            readlen = 0; // reset buf pos
-            serialInBuf[newWritePos] = atoi(buf);
+        serialTextBuf[serialTextReadlen] = serialStream->read();
+        if (serialTextBuf[serialTextReadlen] == ' ') { // if found a space (end of byte)
+          serialTextBuf[serialTextReadlen] = 0; // null-terminate buffer
+          if (serialTextReadlen > 0) {
+            serialTextReadlen = 0; // reset serialTextBuf pos
+            serialInBuf[newWritePos] = atoi(serialTextBuf);
             newWritePos++;
             newWritePos %= SLIDER_SERIAL_BUF_SIZE;
             if (newWritePos == serialBufWritePos)
@@ -197,12 +200,12 @@ bool segaSlider::readSerial() {
           }
         }
         else {
-          readlen++;
+          serialTextReadlen++;
         }
       }
       serialBufWritePos = newWritePos;
-    }
-    else {
+      
+    #else // SLIDER_SERIAL_TEXT_MODE
       int newWritePos = serialBufWritePos;
       newWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], SLIDER_SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SLIDER_SERIAL_BUF_SIZE
       if (newWritePos >= SLIDER_SERIAL_BUF_SIZE)
@@ -211,7 +214,9 @@ bool segaSlider::readSerial() {
         newWritePos += serialStream->readBytes(&serialInBuf[newWritePos], serialBufWritePos - newWritePos); // read from newWritePos to (old)serialBufWritePos
       }
       serialBufWritePos = newWritePos;
-    }
+      
+    #endif // SLIDER_SERIAL_TEXT_MODE
+    
     return true;
   }
   else {
