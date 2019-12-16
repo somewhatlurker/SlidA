@@ -57,5 +57,5 @@ public:
   bool* checkAll();
   
   // (re-)calibrate the sensors
-  void calibrate(byte samples);
+  void calibrate(byte samples = AIR_CALIBRATION_SAMPLES);
 };

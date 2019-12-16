@@ -101,17 +101,29 @@ int airSensor::readLevelVal(byte level) {
 
 // update a baseline
 void airSensor::updateBaseline(byte level, int val) {
-  sensorBaselines[level] = val * (1 / (float)AIR_BASELINE_AVERAGING) + sensorBaselines[level] * (1 - (1 / (float)AIR_BASELINE_AVERAGING));
+  // use some static floats to save on floating point operations
+  static float multiplier = 1 / (float)AIR_BASELINE_AVERAGING;
+  static float one_minus_multiplier = 1 - multiplier;
+  
+  sensorBaselines[level] = val * multiplier + sensorBaselines[level] * one_minus_multiplier;
 }
 
 // update a threshold
 void airSensor::updateThreshold(byte level, int val) {
-  sensorThresholds[level] = val * (1 / (float)AIR_THRESHOLD_AVERAGING) + sensorThresholds[level] * (1 - (1 / (float)AIR_THRESHOLD_AVERAGING));
+  // use some static floats to save on floating point operations
+  static float multiplier = 1 / (float)AIR_THRESHOLD_AVERAGING;
+  static float one_minus_multiplier = 1 - multiplier;
+  
+  sensorThresholds[level] = val * multiplier + sensorThresholds[level] * one_minus_multiplier;
 }
 
 // update an averaged level value
 void airSensor::updateAveragedVal(byte level, int val) {
-  averagedVals[level] = val * (1 / (float)AIR_VALUE_AVERAGING) + averagedVals[level] * (1 - (1 / (float)AIR_VALUE_AVERAGING));
+  // use some static floats to save on floating point operations
+  static float multiplier = 1 / (float)AIR_VALUE_AVERAGING;
+  static float one_minus_multiplier = 1 - multiplier;
+  
+  averagedVals[level] = val * multiplier + averagedVals[level] * one_minus_multiplier;
 }
 
 // create a sensor
@@ -132,7 +144,7 @@ bool airSensor::checkLevel(byte level) {
     return false;
   
   if (!isCalibrated)
-    calibrate(AIR_CALIBRATION_SAMPLES);
+    calibrate();
 
   updateAveragedVal(level, readLevelVal(level));
   int delta = sensorBaselines[level] - averagedVals[level];
@@ -169,12 +181,15 @@ void airSensor::calibrate(byte samples) {
   for (float spl = 1; spl <= samples; spl++) {
     for (int i = 0; i < 6; i++) {
       int val = readLevelVal(i); // readLevelVal uses LEDs
+
+      float multiplier = 1 / spl;
+      float one_minus_multiplier = 1 - multiplier;
       
       // use custom averages update that takes into account number of samples taken
-      averagedVals[i] = val * (1 / spl) + averagedVals[i] * (1 - (1 / spl));
+      averagedVals[i] = val * multiplier + averagedVals[i] * one_minus_multiplier;
       
       // use custom baseline update that takes into account number of samples taken
-      sensorBaselines[i] = val * (1 / spl) + sensorBaselines[i] * (1 - (1 / spl));
+      sensorBaselines[i] = val * multiplier + sensorBaselines[i] * one_minus_multiplier;
     }
   }
   
@@ -183,9 +198,12 @@ void airSensor::calibrate(byte samples) {
     for (int i = 0; i < 6; i++) {
       int val = readSensor(i); // readSensor doesn't use LEDs
       int delta = sensorBaselines[i] - val;
+
+      float multiplier = 1 / spl;
+      float one_minus_multiplier = 1 - multiplier;
       
       // use custom threshold update that takes into account number of samples taken
-      sensorThresholds[i] = delta * (1 / spl) + sensorThresholds[i] * (1 - (1 / spl));
+      sensorThresholds[i] = delta * multiplier + sensorThresholds[i] * one_minus_multiplier;
     }
     delayMicroseconds(AIR_HOLD_US); // should ensure there's some delay...
   }
