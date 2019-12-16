@@ -135,7 +135,6 @@ bool airSensor::checkLevel(byte level) {
     calibrate(AIR_CALIBRATION_SAMPLES);
 
   updateAveragedVal(level, readLevelVal(level));
-
   int delta = sensorBaselines[level] - averagedVals[level];
   
   if (delta > sensorThresholds[level]) {
@@ -159,10 +158,11 @@ bool* airSensor::checkAll() {
 // (re-)calibrate the sensors
 void airSensor::calibrate(byte samples) {
   // reset averages, baselines, and thresholds
+  // actually completely unnecessary
   for (int i = 0; i < 6; i++) {
     averagedVals[i] = 800;
     sensorBaselines[i] = 800;
-    sensorThresholds[i] = 10;
+    sensorThresholds[i] = 100;
   }
   
   // find baseline values for sensor on and save averaged vals
@@ -174,7 +174,7 @@ void airSensor::calibrate(byte samples) {
       averagedVals[i] = val * (1 / spl) + averagedVals[i] * (1 - (1 / spl));
       
       // use custom baseline update that takes into account number of samples taken
-      sensorBaselines[i] = averagedVals[i] * (1 / spl) + sensorBaselines[i] * (1 - (1 / spl));
+      sensorBaselines[i] = val * (1 / spl) + sensorBaselines[i] * (1 - (1 / spl));
     }
   }
   
