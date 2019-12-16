@@ -1,6 +1,7 @@
 #include "segaSlider.h"
 #include "sliderdefs.h"
 #include "mpr121.h"
+#include "airSensor.h"
 #include "pins.h"
 #include <FastLED.h>
 
@@ -78,6 +79,10 @@ sliderPacket boardinfoPacket;
 mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 
+// air sensor
+airSensor airSensor({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1, PIN_AIRSENSOR_2, PIN_AIRSENSOR_3, PIN_AIRSENSOR_4, PIN_AIRSENSOR_5, PIN_AIRSENSOR_6} });
+
+
 void setup() {
   // set pin modes for stuff that's handled in the main sketch file
   pinMode(STATUS_LED_BASIC_1_PIN, OUTPUT);
@@ -136,7 +141,7 @@ void loop() {
   // clear errors (they'll be reset if necessary)
   curError = ERRORSTATE_NONE;
 
-  curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
+  //curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
 
 
   // check for new slider data
