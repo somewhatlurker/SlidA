@@ -19,8 +19,6 @@ private:
   bool isCalibrated = false;
   
   int averagedVals[6]; // slightly smoothed sensor readings
-  int sensorBaselines[6]; // very smoothed readings for unblocked sensor only
-  int sensorThresholds[6]; // calibrated deltas from baseline for detection
   
   // set which LED should be enabled (-1 for off)
   void changeLed(byte led);
@@ -48,6 +46,9 @@ private:
 public:
   // create a sensor
   airSensor(airSensorPins pins);
+  
+  int sensorBaselines[6]; // very smoothed readings for unblocked sensor only
+  int sensorThresholds[6]; // calibrated deltas from baseline for detection
   
   // read whether an air level has been blocked
   bool checkLevel(byte level);
