@@ -194,4 +194,6 @@ void airSensor::calibrate(byte samples) {
   for (int i = 0; i < 6; i++) {
     sensorThresholds[i] /= 3;
   }
+
+  isCalibrated = true;
 }
