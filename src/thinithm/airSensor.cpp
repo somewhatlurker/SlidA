@@ -86,8 +86,12 @@ void airSensor::changeLed(byte led) {
 int airSensor::readSensor(byte sensor) {
   if (sensor < 0 || sensor > 5)
     return 0;
-  
-  return analogRead(pins.sensors[sensor]);
+
+  #if AIR_USE_ANALOG
+    return analogRead(pins.sensors[sensor]);
+  #else
+    return digitalRead(pins.sensors[sensor]);
+  #endif
 }
 
 // read a raw sensor level value (with LED switched)
@@ -99,6 +103,7 @@ int airSensor::readLevelVal(byte level) {
   return val;
 }
 
+#if AIR_USE_ANALOG
 // update a baseline
 void airSensor::updateBaseline(byte level, int val) {
   // use some static floats to save on floating point operations
@@ -125,6 +130,7 @@ void airSensor::updateAveragedVal(byte level, int val) {
   
   averagedVals[level] = val * multiplier + averagedVals[level] * one_minus_multiplier;
 }
+#endif // AIR_USE_ANALOG
 
 // create a sensor
 airSensor::airSensor(airSensorPins pinstruct) {
@@ -142,21 +148,25 @@ airSensor::airSensor(airSensorPins pinstruct) {
 bool airSensor::checkLevel(byte level) {
   if (level < 0 || level > 5)
     return false;
-  
-  if (!isCalibrated)
-    calibrate();
 
-  updateAveragedVal(level, readLevelVal(level));
-  int delta = sensorBaselines[level] - averagedVals[level];
+  #if AIR_USE_ANALOG
+    if (!isCalibrated)
+      calibrate();
   
-  if (delta > sensorThresholds[level]) {
-    updateThreshold(level, delta / AIR_THRESHOLD_DIVISOR);
-    return true;
-  }
-  else {
-    updateBaseline(level, averagedVals[level]);
-    return false;
-  }
+    updateAveragedVal(level, readLevelVal(level));
+    int delta = sensorBaselines[level] - averagedVals[level];
+    
+    if (delta > sensorThresholds[level]) {
+      updateThreshold(level, delta / AIR_THRESHOLD_DIVISOR);
+      return true;
+    }
+    else {
+      updateBaseline(level, averagedVals[level]);
+      return false;
+    }
+  #else // AIR_USE_ANALOG
+    return readLevelVal(level) == LOW ? true : false;
+  #endif // AIR_USE_ANALOG
 }
 
 // read whether all air levels have been blocked (returns pointer to an array of bools)
@@ -168,6 +178,7 @@ bool* airSensor::checkAll() {
   return buf;
 }
 
+#if AIR_USE_ANALOG
 // (re-)calibrate the sensors
 // use offset to continue calibrating after already calibrating a number of samples
 void airSensor::calibrate(byte samples, byte offset) {
@@ -214,3 +225,4 @@ void airSensor::calibrate(byte samples, byte offset) {
 
   isCalibrated = true;
 }
+#endif // AIR_USE_ANALOG
