@@ -1,14 +1,14 @@
 #pragma once
 #include <Arduino.h>
 
-#define AIR_USE_ANALOG true
+#define AIRTOWER_USE_ANALOG true
 
-#define AIR_VALUE_AVERAGING 2
-#define AIR_BASELINE_AVERAGING 256
-#define AIR_THRESHOLD_AVERAGING 128
-#define AIR_CALIBRATION_SAMPLES 128
-#define AIR_HOLD_US 150
-#define AIR_THRESHOLD_DIVISOR 3
+#define AIRTOWER_VALUE_AVERAGING 2
+#define AIRTOWER_BASELINE_AVERAGING 256
+#define AIRTOWER_THRESHOLD_AVERAGING 128
+#define AIRTOWER_CALIBRATION_SAMPLES 128
+#define AIRTOWER_HOLD_US 150
+#define AIRTOWER_THRESHOLD_DIVISOR 3
 
 struct airTowerPins {
   byte leds[3];
@@ -19,7 +19,7 @@ class airTower {
 private:
   airTowerPins pins;
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     bool isCalibrated = false;
     int averagedVals[6]; // slightly smoothed sensor readings
   #endif
@@ -38,7 +38,7 @@ private:
   // read a raw sensor level value (with LED switched)
   int readLevelVal(byte level);
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     // update a baseline
     void updateBaseline(byte level, int val);
     
@@ -53,7 +53,7 @@ public:
   // create an air tower
   airTower(airTowerPins pins);
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     int sensorBaselines[6]; // very smoothed readings for unblocked sensor only
     int sensorThresholds[6]; // calibrated deltas from baseline for detection
   #endif
@@ -64,9 +64,9 @@ public:
   // read whether all air levels have been blocked (returns pointer to an array of bools)
   bool* checkAll();
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     // (re-)calibrate the sensors
     // use offset to continue calibrating after already calibrating a number of samples
-    void airTower::calibrate(byte samples = AIR_CALIBRATION_SAMPLES, byte offset = 0);
+    void airTower::calibrate(byte samples = AIRTOWER_CALIBRATION_SAMPLES, byte offset = 0);
   #endif
 };

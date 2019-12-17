@@ -87,7 +87,7 @@ int airTower::readSensor(byte sensor) {
   if (sensor < 0 || sensor > 5)
     return 0;
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     return analogRead(pins.sensors[sensor]);
   #else
     return digitalRead(pins.sensors[sensor]);
@@ -97,17 +97,17 @@ int airTower::readSensor(byte sensor) {
 // read a raw sensor level value (with LED switched)
 int airTower::readLevelVal(byte level) {
   changeLed(level);
-  delayMicroseconds(AIR_HOLD_US); // allow some time for switching to occur
+  delayMicroseconds(AIRTOWER_HOLD_US); // allow some time for switching to occur
   int val = readSensor(level);
   killLeds();
   return val;
 }
 
-#if AIR_USE_ANALOG
+#if AIRTOWER_USE_ANALOG
 // update a baseline
 void airTower::updateBaseline(byte level, int val) {
   // use some static floats to save on floating point operations
-  static float multiplier = 1 / (float)AIR_BASELINE_AVERAGING;
+  static float multiplier = 1 / (float)AIRTOWER_BASELINE_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
   
   sensorBaselines[level] = val * multiplier + sensorBaselines[level] * one_minus_multiplier;
@@ -116,7 +116,7 @@ void airTower::updateBaseline(byte level, int val) {
 // update a threshold
 void airTower::updateThreshold(byte level, int val) {
   // use some static floats to save on floating point operations
-  static float multiplier = 1 / (float)AIR_THRESHOLD_AVERAGING;
+  static float multiplier = 1 / (float)AIRTOWER_THRESHOLD_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
   
   sensorThresholds[level] = val * multiplier + sensorThresholds[level] * one_minus_multiplier;
@@ -125,12 +125,12 @@ void airTower::updateThreshold(byte level, int val) {
 // update an averaged level value
 void airTower::updateAveragedVal(byte level, int val) {
   // use some static floats to save on floating point operations
-  static float multiplier = 1 / (float)AIR_VALUE_AVERAGING;
+  static float multiplier = 1 / (float)AIRTOWER_VALUE_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
   
   averagedVals[level] = val * multiplier + averagedVals[level] * one_minus_multiplier;
 }
-#endif // AIR_USE_ANALOG
+#endif // AIRTOWER_USE_ANALOG
 
 // create an air tower
 airTower::airTower(airTowerPins pinstruct) {
@@ -149,7 +149,7 @@ bool airTower::checkLevel(byte level) {
   if (level < 0 || level > 5)
     return false;
 
-  #if AIR_USE_ANALOG
+  #if AIRTOWER_USE_ANALOG
     if (!isCalibrated)
       calibrate();
   
@@ -157,16 +157,16 @@ bool airTower::checkLevel(byte level) {
     int delta = sensorBaselines[level] - averagedVals[level];
     
     if (delta > sensorThresholds[level]) {
-      updateThreshold(level, delta / AIR_THRESHOLD_DIVISOR);
+      updateThreshold(level, delta / AIRTOWER_THRESHOLD_DIVISOR);
       return true;
     }
     else {
       updateBaseline(level, averagedVals[level]);
       return false;
     }
-  #else // AIR_USE_ANALOG
+  #else // AIRTOWER_USE_ANALOG
     return readLevelVal(level) == LOW ? true : false;
-  #endif // AIR_USE_ANALOG
+  #endif // AIRTOWER_USE_ANALOG
 }
 
 // read whether all air levels have been blocked (returns pointer to an array of bools)
@@ -178,7 +178,7 @@ bool* airTower::checkAll() {
   return buf;
 }
 
-#if AIR_USE_ANALOG
+#if AIRTOWER_USE_ANALOG
 // (re-)calibrate the sensors
 // use offset to continue calibrating after already calibrating a number of samples
 void airTower::calibrate(byte samples, byte offset) {
@@ -218,11 +218,11 @@ void airTower::calibrate(byte samples, byte offset) {
       float one_minus_multiplier = 1 - multiplier;
       
       // use custom threshold update that takes into account number of samples taken
-      sensorThresholds[i] = (delta / AIR_THRESHOLD_DIVISOR) * multiplier + sensorThresholds[i] * one_minus_multiplier;
+      sensorThresholds[i] = (delta / AIRTOWER_THRESHOLD_DIVISOR) * multiplier + sensorThresholds[i] * one_minus_multiplier;
     }
-    delayMicroseconds(AIR_HOLD_US); // should ensure there's some delay...
+    delayMicroseconds(AIRTOWER_HOLD_US); // should ensure there's some delay...
   }
 
   isCalibrated = true;
 }
-#endif // AIR_USE_ANALOG
+#endif // AIRTOWER_USE_ANALOG
