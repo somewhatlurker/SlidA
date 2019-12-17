@@ -6,6 +6,7 @@
 #define AIR_THRESHOLD_AVERAGING 128
 #define AIR_CALIBRATION_SAMPLES 128
 #define AIR_HOLD_US 150
+#define AIR_THRESHOLD_DIVISOR 3
 
 struct airSensorPins {
   byte leds[3];

@@ -150,6 +150,7 @@ bool airSensor::checkLevel(byte level) {
   int delta = sensorBaselines[level] - averagedVals[level];
   
   if (delta > sensorThresholds[level]) {
+    updateThreshold(level, delta / AIR_THRESHOLD_DIVISOR);
     return true;
   }
   else {
@@ -203,14 +204,9 @@ void airSensor::calibrate(byte samples) {
       float one_minus_multiplier = 1 - multiplier;
       
       // use custom threshold update that takes into account number of samples taken
-      sensorThresholds[i] = delta * multiplier + sensorThresholds[i] * one_minus_multiplier;
+      sensorThresholds[i] = (delta / AIR_THRESHOLD_DIVISOR) * multiplier + sensorThresholds[i] * one_minus_multiplier;
     }
     delayMicroseconds(AIR_HOLD_US); // should ensure there's some delay...
-  }
-  
-  // divide thresholds to get a better value for switching
-  for (int i = 0; i < 6; i++) {
-    sensorThresholds[i] /= 3;
   }
 
   isCalibrated = true;
