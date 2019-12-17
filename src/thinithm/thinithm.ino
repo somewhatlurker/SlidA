@@ -6,6 +6,14 @@
 #include <FastLED.h>
 
 
+// sleep for x microseconds after running the main loop
+#define LOOP_SLEEP_US 1000
+
+// update air readings every x loops
+// (air is less sensitive to timing so can be updated less often if necessary)
+#define AIR_UPDATE_DUTY 1
+
+
 // slider LED vars
 #define NUM_SLIDER_LEDS 32
 CRGB sliderLeds[NUM_SLIDER_LEDS];
@@ -133,9 +141,10 @@ void setup() {
 // vars used in main loop
 int curSliderPatternByte;
 bool scanOn = false;
-int sleepTime = 1;
+int sleepTime = LOOP_SLEEP_US;
 unsigned long lastSliderSendMillis;
 unsigned long lastSerialRecvMillis;
+unsigned long loopCount = 0;
 
 void loop() {
   // clear errors (they'll be reset if necessary)
@@ -239,49 +248,54 @@ void loop() {
   }
 
   
-  // if slider scanning is on, process it (as appropriate)
-  // -- if slider touch state is changed, send data
-  // -- also send as a keep alive if slider touch state hasn't changed recently
-  if ( scanOn &&
-       ( (digitalRead(PIN_SLIDER_IRQ) == LOW) ||
-         ((millis() - lastSliderSendMillis) > 250) )
-     )
-  {
-    //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
-    curSliderPatternByte = (millis()/30) % 32;
-    sliderBuf[curSliderPatternByte] = 0xC0;
-
-    /*
-    // clear the output buffer
-    memset(sliderBuf, 0, sizeof(sliderBuf));
-
-    static const int numInputTouches = 12 * NUM_MPRS;
-    static bool allTouches[numInputTouches];
-
-    // read all mpr touches into allTouches
-    for (int i = 0; i < NUM_MPRS; i++) {
-      mpr121 &mpr = mprs[i];
-      bool* touches = mpr.readTouchState();
-      memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
-    }
-
-    // apply touch data to output buffer
-    for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-      for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
-        int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+  // if slider scanning is on, update inputs (as appropriate)
+  if (scanOn) {
+    
+    // if slider touch state has changed (interrupt was triggered), send data
+    // also send as a keep alive if slider touch state hasn't changed recently
+    if ( (digitalRead(PIN_SLIDER_IRQ) == LOW) || ((millis() - lastSliderSendMillis) > 250) ) {
+      //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
+      curSliderPatternByte = (millis()/30) % 32;
+      sliderBuf[curSliderPatternByte] = 0xC0;
   
-        if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
-          sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+      /*
+      // clear the output buffer
+      memset(sliderBuf, 0, sizeof(sliderBuf));
+  
+      static const int numInputTouches = 12 * NUM_MPRS;
+      static bool allTouches[numInputTouches];
+  
+      // read all mpr touches into allTouches
+      for (int i = 0; i < NUM_MPRS; i++) {
+        mpr121 &mpr = mprs[i];
+        bool* touches = mpr.readTouchState();
+        memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+      }
+  
+      // apply touch data to output buffer
+      for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+        for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+          int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+    
+          if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+            sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+          }
         }
       }
+      */
+      
+      sliderProtocol.sendSliderPacket(scanPacket);
+      
+      sliderBuf[curSliderPatternByte] = 0x00;
+      
+      lastSliderSendMillis = millis();
     }
-    */
-    
-    sliderProtocol.sendSliderPacket(scanPacket);
-    
-    sliderBuf[curSliderPatternByte] = 0x00;
-    
-    lastSliderSendMillis = millis();
+
+
+    // if air should be updated this loop, update it
+    if (loopCount % AIR_UPDATE_DUTY == 0) {
+      
+    }
   }
 
 
@@ -311,6 +325,7 @@ void loop() {
     #endif
     digitalWrite(STATUS_LED_BASIC_2_PIN, HIGH);
   }
-  
-  delay(sleepTime);
+
+  loopCount++;
+  delayMicroseconds(sleepTime);
 }
