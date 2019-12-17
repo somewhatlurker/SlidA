@@ -56,7 +56,8 @@ public:
   
   // read whether all air levels have been blocked (returns pointer to an array of bools)
   bool* checkAll();
-  
+
   // (re-)calibrate the sensors
-  void calibrate(byte samples = AIR_CALIBRATION_SAMPLES);
+  // use offset to continue calibrating after already calibrating a number of samples
+  void airSensor::calibrate(byte samples = AIR_CALIBRATION_SAMPLES, byte offset = 0);
 };

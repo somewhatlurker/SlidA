@@ -169,13 +169,16 @@ bool* airSensor::checkAll() {
 }
 
 // (re-)calibrate the sensors
-void airSensor::calibrate(byte samples) {
-  // reset averages, baselines, and thresholds
-  // actually completely unnecessary
-  for (int i = 0; i < 6; i++) {
-    averagedVals[i] = 800;
-    sensorBaselines[i] = 800;
-    sensorThresholds[i] = 100;
+// use offset to continue calibrating after already calibrating a number of samples
+void airSensor::calibrate(byte samples, byte offset) {
+  if (offset == 0) {
+    // reset averages, baselines, and thresholds
+    // actually completely unnecessary
+    for (int i = 0; i < 6; i++) {
+      averagedVals[i] = 800;
+      sensorBaselines[i] = 800;
+      sensorThresholds[i] = 100;
+    }
   }
   
   // find baseline values for sensor on and save averaged vals
@@ -183,7 +186,7 @@ void airSensor::calibrate(byte samples) {
     for (int i = 0; i < 6; i++) {
       int val = readLevelVal(i); // readLevelVal uses LEDs
 
-      float multiplier = 1 / spl;
+      float multiplier = 1 / (spl + offset);
       float one_minus_multiplier = 1 - multiplier;
       
       // use custom averages update that takes into account number of samples taken
@@ -200,7 +203,7 @@ void airSensor::calibrate(byte samples) {
       int val = readSensor(i); // readSensor doesn't use LEDs
       int delta = sensorBaselines[i] - val;
 
-      float multiplier = 1 / spl;
+      float multiplier = 1 / (spl + offset);
       float one_minus_multiplier = 1 - multiplier;
       
       // use custom threshold update that takes into account number of samples taken
