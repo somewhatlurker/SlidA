@@ -10,14 +10,14 @@
 #define AIR_HOLD_US 150
 #define AIR_THRESHOLD_DIVISOR 3
 
-struct airSensorPins {
+struct airTowerPins {
   byte leds[3];
   byte sensors[6];
 };
 
-class airSensor {
+class airTower {
 private:
-  airSensorPins pins;
+  airTowerPins pins;
 
   #if AIR_USE_ANALOG
     bool isCalibrated = false;
@@ -50,8 +50,8 @@ private:
   #endif
 
 public:
-  // create a sensor
-  airSensor(airSensorPins pins);
+  // create an air tower
+  airTower(airTowerPins pins);
 
   #if AIR_USE_ANALOG
     int sensorBaselines[6]; // very smoothed readings for unblocked sensor only
@@ -67,6 +67,6 @@ public:
   #if AIR_USE_ANALOG
     // (re-)calibrate the sensors
     // use offset to continue calibrating after already calibrating a number of samples
-    void airSensor::calibrate(byte samples = AIR_CALIBRATION_SAMPLES, byte offset = 0);
+    void airTower::calibrate(byte samples = AIR_CALIBRATION_SAMPLES, byte offset = 0);
   #endif
 };

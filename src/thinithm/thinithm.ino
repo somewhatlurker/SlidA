@@ -1,7 +1,7 @@
 #include "segaSlider.h"
 #include "sliderdefs.h"
 #include "mpr121.h"
-#include "airSensor.h"
+#include "airTower.h"
 #include "pins.h"
 #include <FastLED.h>
 
@@ -79,8 +79,8 @@ sliderPacket boardinfoPacket;
 mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 
-// air sensor
-airSensor airSensor({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1, PIN_AIRSENSOR_2, PIN_AIRSENSOR_3, PIN_AIRSENSOR_4, PIN_AIRSENSOR_5, PIN_AIRSENSOR_6} });
+// air tower
+airTower airTower({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1, PIN_AIRSENSOR_2, PIN_AIRSENSOR_3, PIN_AIRSENSOR_4, PIN_AIRSENSOR_5, PIN_AIRSENSOR_6} });
 
 
 void setup() {

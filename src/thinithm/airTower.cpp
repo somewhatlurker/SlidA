@@ -1,7 +1,7 @@
-#include "airSensor.h"
+#include "airTower.h"
 
 // set which LED should be enabled (-1 for off)
-void airSensor::changeLed(byte led) {
+void airTower::changeLed(byte led) {
   switch (led) {
     case 0:
       pinMode(pins.leds[0], OUTPUT);
@@ -83,7 +83,7 @@ void airSensor::changeLed(byte led) {
 }
 
 // read a raw sensor pin
-int airSensor::readSensor(byte sensor) {
+int airTower::readSensor(byte sensor) {
   if (sensor < 0 || sensor > 5)
     return 0;
 
@@ -95,7 +95,7 @@ int airSensor::readSensor(byte sensor) {
 }
 
 // read a raw sensor level value (with LED switched)
-int airSensor::readLevelVal(byte level) {
+int airTower::readLevelVal(byte level) {
   changeLed(level);
   delayMicroseconds(AIR_HOLD_US); // allow some time for switching to occur
   int val = readSensor(level);
@@ -105,7 +105,7 @@ int airSensor::readLevelVal(byte level) {
 
 #if AIR_USE_ANALOG
 // update a baseline
-void airSensor::updateBaseline(byte level, int val) {
+void airTower::updateBaseline(byte level, int val) {
   // use some static floats to save on floating point operations
   static float multiplier = 1 / (float)AIR_BASELINE_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
@@ -114,7 +114,7 @@ void airSensor::updateBaseline(byte level, int val) {
 }
 
 // update a threshold
-void airSensor::updateThreshold(byte level, int val) {
+void airTower::updateThreshold(byte level, int val) {
   // use some static floats to save on floating point operations
   static float multiplier = 1 / (float)AIR_THRESHOLD_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
@@ -123,7 +123,7 @@ void airSensor::updateThreshold(byte level, int val) {
 }
 
 // update an averaged level value
-void airSensor::updateAveragedVal(byte level, int val) {
+void airTower::updateAveragedVal(byte level, int val) {
   // use some static floats to save on floating point operations
   static float multiplier = 1 / (float)AIR_VALUE_AVERAGING;
   static float one_minus_multiplier = 1 - multiplier;
@@ -132,8 +132,8 @@ void airSensor::updateAveragedVal(byte level, int val) {
 }
 #endif // AIR_USE_ANALOG
 
-// create a sensor
-airSensor::airSensor(airSensorPins pinstruct) {
+// create an air tower
+airTower::airTower(airTowerPins pinstruct) {
   pins = pinstruct;
   
   pinMode(pins.sensors[0], INPUT);
@@ -145,7 +145,7 @@ airSensor::airSensor(airSensorPins pinstruct) {
 }
 
 // read whether an air level has been blocked
-bool airSensor::checkLevel(byte level) {
+bool airTower::checkLevel(byte level) {
   if (level < 0 || level > 5)
     return false;
 
@@ -170,7 +170,7 @@ bool airSensor::checkLevel(byte level) {
 }
 
 // read whether all air levels have been blocked (returns pointer to an array of bools)
-bool* airSensor::checkAll() {
+bool* airTower::checkAll() {
   static bool buf[6];
   for (int i = 0; i < 6; i++) {
     buf[i] = checkLevel(i);
@@ -181,7 +181,7 @@ bool* airSensor::checkAll() {
 #if AIR_USE_ANALOG
 // (re-)calibrate the sensors
 // use offset to continue calibrating after already calibrating a number of samples
-void airSensor::calibrate(byte samples, byte offset) {
+void airTower::calibrate(byte samples, byte offset) {
   if (offset == 0) {
     // reset averages, baselines, and thresholds
     // actually completely unnecessary
