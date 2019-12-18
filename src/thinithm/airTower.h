@@ -57,6 +57,8 @@ public:
     int sensorBaselines[6]; // very smoothed readings for unblocked sensor only
     int sensorThresholds[6]; // calibrated deltas from baseline for detection
   #endif
+
+  bool failedSensors[6] = { true, true, true, true, true, true }; // sensors that are reporting constant blockage
   
   // read whether an air level has been blocked
   bool checkLevel(byte level);

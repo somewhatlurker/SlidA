@@ -149,24 +149,33 @@ bool airTower::checkLevel(byte level) {
   if (level < 0 || level > 5)
     return false;
 
+  bool result;
+  
   #if AIRTOWER_USE_ANALOG
     if (!isCalibrated)
       calibrate();
-  
+      
     updateAveragedVal(level, readLevelVal(level));
     int delta = sensorBaselines[level] - averagedVals[level];
     
     if (delta > sensorThresholds[level]) {
       updateThreshold(level, delta / AIRTOWER_THRESHOLD_DIVISOR);
-      return true;
+      result = true;
     }
     else {
       updateBaseline(level, averagedVals[level]);
-      return false;
+      result = false;
     }
   #else // AIRTOWER_USE_ANALOG
-    return readLevelVal(level) == LOW ? true : false;
+    result = readLevelVal(level) == LOW ? true : false;
   #endif // AIRTOWER_USE_ANALOG
+
+  // if not triggered, the sensor seems to be working
+  if (result == false)
+    failedSensors[level] = false;
+
+  // always return false for broken sensors
+  return failedSensors[level] ? false : result;
 }
 
 // read whether all air levels have been blocked (returns pointer to an array of bools)
