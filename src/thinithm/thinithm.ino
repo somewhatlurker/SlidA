@@ -4,6 +4,7 @@
 #include "airTower.h"
 #include "pins.h"
 #include <FastLED.h>
+#include <Keyboard.h>
 
 
 // sleep for x microseconds after running the main loop
@@ -138,9 +139,29 @@ void setup() {
 }
 
 
+bool scanOn = false;
+
+void setScanning(bool on_off) {
+  if (on_off) {
+    scanOn = true;
+    //for (mpr121 &mpr : mprs) {
+    //  mpr.startMPR(12);
+    //}
+    //airTower.calibrate();
+    Keyboard.begin();
+  }
+  else {
+    scanOn = false;
+    //for (mpr121 &mpr : mprs) {
+    //  mpr.stopMPR();
+    //}
+    Keyboard.end();
+  }
+}
+
+
 // vars used in main loop
 int curSliderPatternByte;
-bool scanOn = false;
 int sleepTime = LOOP_SLEEP_US;
 unsigned long lastSliderSendMillis;
 unsigned long lastSerialRecvMillis;
@@ -190,17 +211,11 @@ void loop() {
           break;
           
         case SLIDER_SCAN_ON:
-          scanOn = true;
-          //for (mpr121 &mpr : mprs) {
-          //  mpr.startMPR(12);
-          //}
+          setScanning(true);
           break; // no response needed
           
         case SLIDER_SCAN_OFF:
-          scanOn = false;
-          //for (mpr121 &mpr : mprs) {
-          //  mpr.stopMPR();
-          //}
+          setScanning(false);
           emptyPacket.Command = SLIDER_SCAN_OFF;
           sliderProtocol.sendSliderPacket(emptyPacket);
           break;
@@ -239,10 +254,7 @@ void loop() {
   // disable scan and set error if serial is dead
   if ((millis() - lastSerialRecvMillis) > 10000) {
     if (scanOn) {
-      scanOn = false;
-      //for (mpr121 &mpr : mprs) {
-      //  mpr.stopMPR();
-      //}
+      setScanning(false);
     }
     curError |= ERRORSTATE_SERIAL_RX;
   }
