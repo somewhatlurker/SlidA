@@ -19,6 +19,7 @@
  *   bool touch0 = touches[0];
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
+ *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
  *   
