@@ -1,5 +1,8 @@
 /*
  * slider board type defs for thinithm (divaslider)
+ * 
+ * if adding more in the future it'd probably be a good idea to use PROGMEM,
+ * but for now it's not really worth bothering
  */
 
 #pragma once

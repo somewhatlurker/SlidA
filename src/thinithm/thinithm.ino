@@ -155,6 +155,7 @@ void setScanning(bool on_off) {
     //for (mpr121 &mpr : mprs) {
     //  mpr.stopMPR();
     //}
+    Keyboard.releaseAll();
     Keyboard.end();
   }
 }
@@ -306,7 +307,16 @@ void loop() {
 
     // if air should be updated this loop, update it
     if (loopCount % AIR_UPDATE_DUTY == 0) {
-      
+      /*
+      static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
+      Keyboard.releaseAll();
+
+      bool* blockedLevels = airTower.checkAll();
+      for (int i = 0; i < 6; i++) {
+        if (blockedLevels[i])
+           Keyboard.press(airKeys[i]);
+      }
+      */
     }
   }
 
