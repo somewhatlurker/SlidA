@@ -311,9 +311,8 @@ void loop() {
       static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
       Keyboard.releaseAll();
 
-      bool* blockedLevels = airTower.checkAll();
       for (int i = 0; i < 6; i++) {
-        if (blockedLevels[i])
+        if (airTower.checkLevel(i))
            Keyboard.press(airKeys[i]);
       }
       */

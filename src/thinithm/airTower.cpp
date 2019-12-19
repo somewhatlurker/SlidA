@@ -178,6 +178,7 @@ bool airTower::checkLevel(byte level) {
   return failedSensors[level] ? false : result;
 }
 
+/*
 // read whether all air levels have been blocked (returns pointer to an array of bools)
 bool* airTower::checkAll() {
   static bool buf[6];
@@ -186,6 +187,7 @@ bool* airTower::checkAll() {
   }
   return buf;
 }
+*/
 
 #if AIRTOWER_USE_ANALOG
 // (re-)calibrate the sensors

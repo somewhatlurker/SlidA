@@ -62,9 +62,11 @@ public:
   
   // read whether an air level has been blocked
   bool checkLevel(byte level);
-  
+
+  /*
   // read whether all air levels have been blocked (returns pointer to an array of bools)
   bool* checkAll();
+  */
 
   #if AIRTOWER_USE_ANALOG
     // (re-)calibrate the sensors
