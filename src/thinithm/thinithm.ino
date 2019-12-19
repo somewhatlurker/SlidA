@@ -70,17 +70,17 @@ sliderBoardType curSliderMode;
 
 // slider protocol packets for reuse
 byte sliderBuf[32];
-sliderPacket scanPacket;
+sliderPacket scanPacket = { SLIDER_SCAN_REPORT, sliderBuf, 32, true };
 
 byte emptyBytes[0];
-sliderPacket emptyPacket;
+sliderPacket emptyPacket = { (sliderCommand)0, emptyBytes, 0, true }; // command will be replaced as necessary
 
 // 8 byte model number (string with spaces for padding), 1 byte device class, 5 byte chip part number (string), 1 byte unknown, 1 byte fw version, 2 bytes unknown
 // board "15275   ", class 0x0a, chip "06687", 0xff, ver 144, 0x00, 0x64
 byte boardInfoDataDiva[18] = {0x31, 0x35, 0x32, 0x37, 0x35, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x36, 0x38, 0x37, 0xFF, 0x90, 0x00, 0x64};
 // board "15330   ", class 0x0a, chip "06712", 0xff, ver 144, 0x00, 0x64
 byte boardInfoDataChuni[18] = {0x31, 0x35, 0x33, 0x33, 0x30, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x37, 0x31, 0x32, 0xFF, 0x90, 0x00, 0x64};
-sliderPacket boardinfoPacket;
+sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, boardInfoDataChuni, 18, true };
 
 
 // mpr121s
@@ -102,23 +102,6 @@ void setup() {
   // turn on led during setup
   // not gonna bother shifting this to the status lights
   digitalWrite(LED_BUILTIN, LOW);
-
-
-  // set data in slider protocol packets
-  scanPacket.Command = SLIDER_SCAN_REPORT;
-  scanPacket.Data = sliderBuf;
-  scanPacket.DataLength = 32;
-  scanPacket.IsValid = true;
-
-  emptyPacket.Command = (sliderCommand)0; // this will be replaced as necessary
-  emptyPacket.Data = emptyBytes;
-  emptyPacket.DataLength = 0;
-  emptyPacket.IsValid = true;
-
-  boardinfoPacket.Command = SLIDER_BOARDINFO;
-  //boardinfoPacket.Data = boardInfoData;
-  boardinfoPacket.DataLength = 18;
-  boardinfoPacket.IsValid = true;
 
 
   delay(10); // make sure MPR121s have booted
