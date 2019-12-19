@@ -165,6 +165,11 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
     checksum += sendSliderByte(packet.Data[i]);
   }
 
+  // invalid packets should have an incorrect checksum
+  // this might be useful for testing
+  if (!packet.IsValid)
+    checksum += 39;
+
   sendSliderByte(checksum);
 
   #if SLIDER_SERIAL_TEXT_MODE
