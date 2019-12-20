@@ -160,11 +160,11 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
     }
 }
 
-module slider_cover(width = 500, height = 145, thickness = 1.5)
+module slider_cover(width = 470, height = 136, thickness = 1.5)
 {   
-    bevel_x = 33 / (width/2);
-    bevel_y = 48 / (height/2);
-    y_offset = -5;
+    bevel_x = 26 / (width/2);
+    bevel_y = 52 / (height/2);
+    y_offset = -9.5;
     
     color ("gray", 0.1)
     linear_extrude (height = thickness)
@@ -213,7 +213,7 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
     }
 }
 
-module box_walls(width = 500-72, depth = 138, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
 {
     union ()
     {
@@ -242,7 +242,7 @@ module box_walls(width = 500-72, depth = 138, height = 12.6, thickness = 2, tabs
     }
 }
 
-module microusb_port(thickness = 27)
+module microusb_port(thickness = 28)
 {
     screw_distance = 28;
     screw_size = 2.3;
@@ -281,7 +281,7 @@ difference () // top
     {
         slider_cover();
     }
-    translate ([0, -3, 12.6/2 + 1])
+    translate ([0, -7.5, 12.6/2 + 1])
     {
         box_walls(tabs_top=4);
     }
@@ -291,20 +291,20 @@ difference () // bottom
     translate ([0, 0, 12.6])
     {
         color ("black", 0.4)
-        slider_cover(560, thickness = 2);
+        slider_cover(530, thickness = 2);
     }
-    translate ([0, -3, 12.6/2 - 1])
+    translate ([0, -7.5, 12.6/2 - 1])
     {
         box_walls(tabs_bottom=4);
     }
 }
 difference ()
 {
-    translate ([0, -3, 12.6/2])
+    translate ([0, -7.5, 12.6/2])
     {
         box_walls();
     }
-    translate ([0, -48, 7.4])
+    translate ([0, -47, 7.4])
     {
         rotate ([90, 0, 0])
         {
@@ -317,7 +317,7 @@ translate ([0, 0, -1.5])
     //linear_extrude (height = 16.1)
     //slider_holes();
 }
-translate ([0, -48, 7.4])
+translate ([0, -47, 7.4])
 {
     rotate ([90, 0, 0])
     {
