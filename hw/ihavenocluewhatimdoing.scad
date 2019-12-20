@@ -162,9 +162,14 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
 
 module slider_cover(width = 470, height = 136, thickness = 1.5)
 {   
-    bevel_x = 26 / (width/2);
-    bevel_y = 52 / (height/2);
+    bevel_x = 26;
+    bevel_y = 52;
     y_offset = -9.5;
+    
+    extra_hole_size = 3.3;
+    extra_hole_x1 = 145.5;
+    extra_hole_x2 = 48.5;
+    extra_hole_margin_y = 14;
     
     color ("gray", 0.1)
     linear_extrude (height = thickness)
@@ -174,11 +179,28 @@ module slider_cover(width = 470, height = 136, thickness = 1.5)
         {
             scale ([width/2, height/2])
             {
-                polygon(points=[[-1+bevel_x,-1], [1-bevel_x,-1], [1,-1+bevel_y], [1,1-bevel_y],
-                                [1-bevel_x,1], [-1+bevel_x,1], [-1,1-bevel_y], [-1,-1+bevel_y]]);
+                polygon(points=[[-1+bevel_x/(width/2),-1], [1-bevel_x/(width/2),-1], [1,-1+bevel_y/(height/2)], [1,1-bevel_y/(height/2)],
+                                [1-bevel_x/(width/2),1], [-1+bevel_x/(width/2),1], [-1,1-bevel_y/(height/2)], [-1,-1+bevel_y/(height/2)]]);
             }
         }
         slider_holes();
+        
+        translate ([-extra_hole_x1, y_offset - height/2 + extra_hole_margin_y])
+        {
+            circle(r = extra_hole_size/2, $fn=32);
+        }
+        translate ([-extra_hole_x2, y_offset - height/2 + extra_hole_margin_y])
+        {
+            circle(r = extra_hole_size/2, $fn=32);
+        }
+        translate ([extra_hole_x2, y_offset - height/2 + extra_hole_margin_y])
+        {
+            circle(r = extra_hole_size/2, $fn=32);
+        }
+        translate ([extra_hole_x1, y_offset - height/2 + extra_hole_margin_y])
+        {
+            circle(r = extra_hole_size/2, $fn=32);
+        }
     }
 }
 
