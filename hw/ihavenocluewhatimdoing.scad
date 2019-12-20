@@ -62,63 +62,60 @@ module slider_pcbs (n = 4)
     hole_size = 3.2;
     
     color("white", 1.0)
+    linear_extrude (height = thickness)
     difference ()
     {
         for (i=[0:n-1])
         {
-            translate ([(-width_main/2) * n + width_main * i, -height_total/2, 0])
+            translate ([(-width_main/2) * n + width_main * i, -height_total/2])
             {
                 union ()
                 {
                     // main body full width (not full height)
-                    translate ([0, led_height, 0])
+                    translate ([0, led_height])
                     {
-                        cube([width_main, height_main - corner_rad, thickness]);
+                        square([width_main, height_main - corner_rad]);
                     }
                     // main body full height (not full width)
-                    translate ([corner_rad, led_height, 0])
+                    translate ([corner_rad, led_height])
                     {
-                        cube([width_main - corner_rad * 2, height_main, thickness]);
+                        square([width_main - corner_rad * 2, height_main]);
                     }
     
                     // main body corners
-                    translate ([corner_rad, height_total - corner_rad, 0])
+                    translate ([corner_rad, height_total - corner_rad])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
+                        circle(r = corner_rad, $fn=32);
                     }
-                    translate ([width_main - corner_rad, height_total - corner_rad, 0])
+                    translate ([width_main - corner_rad, height_total - corner_rad])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
+                        circle(r = corner_rad, $fn=32);
                     }
                     
                     // led section full width (not full height)
-                    translate ([led_x_offset, corner_rad, 0])
+                    translate ([led_x_offset, corner_rad])
                     {
-                        cube([width_main, led_height - corner_rad, thickness]);
+                        square([width_main, led_height - corner_rad]);
                     }
                     // led section full height (not full width)
-                    translate ([led_x_offset + corner_rad, 0, 0])
+                    translate ([led_x_offset + corner_rad, 0])
                     {
-                        cube([width_main - corner_rad * 2, led_height, thickness]);
+                        square([width_main - corner_rad * 2, led_height]);
                     }
                     
                     // led section corners
-                    translate ([led_x_offset + corner_rad, corner_rad, 0])
+                    translate ([led_x_offset + corner_rad, corner_rad])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
+                        circle(r = corner_rad, $fn=32);
                     }
-                    translate ([led_x_offset + width_main - corner_rad, corner_rad, 0])
+                    translate ([led_x_offset + width_main - corner_rad, corner_rad])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
+                        circle(r = corner_rad, $fn=32);
                     }
                 }
             }
         }
-        translate ([0, 0, -.5])
-        {
-            linear_extrude (height = thickness + 1)
-            slider_holes(n);
-        }
+        slider_holes(n);
     }
 }
 
@@ -131,31 +128,35 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
     top_bottom_border = 1.5;
     
     color("blue", 1.0)
+    linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width) * i + sep_width, -height/2, 0])
+        translate ([-width/2 + (sep_width + key_width) * i + sep_width, -height/2])
         {
-            cube([key_width, height, thickness]);
+            square([key_width, height]);
         }
     }
     
     color("green", 1.0)
+    linear_extrude (height = thickness)
     for (i=[0:sep_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width) * i, -height/2, 0])
+        translate ([-width/2 + (sep_width + key_width) * i, -height/2])
         {
-            cube([sep_width, height, thickness]);
+            square([sep_width, height]);
         }
     }
     color("green", 1.0)
-    translate ([-width/2, -height/2 - top_bottom_border, 0])
+    linear_extrude (height = thickness)
+    translate ([-width/2, -height/2 - top_bottom_border])
     {
-        cube([width, top_bottom_border, thickness]);
+        square([width, top_bottom_border]);
     }
     color("green", 1.0)
-    translate ([-width/2, height/2, 0])
+    linear_extrude (height = thickness)
+    translate ([-width/2, height/2])
     {
-        cube([width, top_bottom_border, thickness]);
+        square([width, top_bottom_border]);
     }
 }
 
@@ -166,22 +167,18 @@ module slider_cover(width = 490, height = 125, thickness = 1.5)
     y_offset = -5;
     
     color ("gray", 0.1)
+    linear_extrude (height = thickness)
     difference ()
     {
-        translate ([0, y_offset , 0])
+        translate ([0, y_offset])
         {
-            scale ([width/2, height/2, 1])
+            scale ([width/2, height/2])
             {
-                linear_extrude (height = thickness)
                 polygon(points=[[-1+bevel_x,-1], [1-bevel_x,-1], [1,-1+bevel_y], [1,1-bevel_y],
                                 [1-bevel_x,1], [-1+bevel_x,1], [-1,1-bevel_y], [-1,-1+bevel_y]]);
             }
         }
-        translate ([0, 0, -.5])
-        {
-            linear_extrude (height = thickness + 1)
-            slider_holes();
-        }
+        slider_holes();
     }
 }
 
@@ -194,21 +191,22 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
     color ("black", 0.4)
     rotate ([90, 0, 0])
     {
+        linear_extrude (height = thickness)
         union ()
         {
-            translate ([-width/2, -height/2, 0])
+            translate ([-width/2, -height/2])
             {
-                cube([width, height, thickness]);
+                square([width, height]);
             }
             for (i=[0:tab_count-1])
             {
-                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), -height/2 - tabs_top, 0])
+                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), -height/2 - tabs_top])
                 {
-                    cube([tab_width, tabs_top, thickness]);
+                    square([tab_width, tabs_top]);
                 }
-                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), height/2, 0])
+                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), height/2])
                 {
-                    cube([tab_width, tabs_bottom, thickness]);
+                    square([tab_width, tabs_bottom]);
                 }
             }
         }
