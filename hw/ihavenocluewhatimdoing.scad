@@ -266,7 +266,7 @@ module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_to
 module microusb_port(thickness = 28)
 {
     screw_distance = 28;
-    screw_size = 2.3;
+    screw_size = 3;
     
     color ("red", 1)
     linear_extrude (height = thickness)
@@ -288,6 +288,34 @@ module microusb_port(thickness = 28)
     {
         linear_extrude (height = thickness)
         circle(r = 5/2, $fn=32);
+    }
+}
+
+module switch_hole(thickness = 8.5)
+{
+    screw_distance = 15;
+    screw_size = 2.2;
+    
+    color ("red", 1)
+    linear_extrude (height = thickness)
+    union ()
+    {
+        translate ([-screw_distance/2, 0])
+        {
+            circle(r = screw_size/2, $fn=32);
+        }
+        translate ([screw_distance/2, 0])
+        {
+            circle(r = screw_size/2, $fn=32);
+        }
+        square([8, 4], center=true);
+    }
+    
+    color ("red", 1)
+    translate ([0, 0, -5])
+    {
+        linear_extrude (height = thickness)
+        circle(r = 7/2, $fn=32);
     }
 }
 
@@ -332,6 +360,13 @@ difference ()
             microusb_port();
         }
     }
+    translate ([-50, -66, 7.4])
+    {
+        rotate ([90, 0, 0])
+        {
+            switch_hole();
+        }
+    }
 }
 translate ([0, 0, -1.5])
 {
@@ -343,5 +378,12 @@ translate ([0, -47, 7.4])
     rotate ([90, 0, 0])
     {
         //microusb_port();
+    }
+}
+translate ([-50, -66, 7.4])
+{
+    rotate ([90, 0, 0])
+    {
+        //switch_hole();
     }
 }
