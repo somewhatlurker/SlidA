@@ -183,9 +183,8 @@ module slider_cover(width = 470, height = 136, thickness = 1.5)
 }
 
 
-module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0, tab_count = 3)
 {   
-    tab_count = 3;
     tab_width = width / (tab_count*2+1);
     
     color ("black", 0.4)
@@ -219,11 +218,11 @@ module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_to
     {
         translate ([0, -depth/2, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 8);
         }
         translate ([0, depth/2-thickness, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 8);
         }
         translate ([-width/2, -thickness, 0])
         {
