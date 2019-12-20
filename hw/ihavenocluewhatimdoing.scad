@@ -240,11 +240,11 @@ module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_to
     {
         translate ([0, -depth/2, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 8);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
         }
         translate ([0, depth/2-thickness, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 8);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
         }
         translate ([-width/2, -thickness, 0])
         {
