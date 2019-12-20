@@ -162,8 +162,8 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
 
 module slider_cover(width = 490, height = 125, thickness = 1.5)
 {   
-    bevel_x = 0.15;
-    bevel_y = 0.7;
+    bevel_x = 37 / (width/2);
+    bevel_y = 44 / (height/2);
     y_offset = -5;
     
     color ("gray", 0.1)
@@ -213,7 +213,7 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
     }
 }
 
-module box_walls(width, depth, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module box_walls(width = 490-76, depth = 115, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
 {
     union ()
     {
@@ -251,11 +251,11 @@ difference () // top
 {
     translate ([0, 0, -1.5])
     {
-        slider_cover(490);
+        slider_cover();
     }
     translate ([0, -4, 12.6/2 + 1])
     {
-        box_walls(490-76, 115, 12.6, tabs_top=4);
+        box_walls(tabs_top=4);
     }
 }
 difference () // bottom
@@ -263,16 +263,16 @@ difference () // bottom
     translate ([0, 0, 12.6])
     {
         color ("black", 0.4)
-        slider_cover(490, thickness = 2);
+        slider_cover(560, thickness = 2);
     }
     translate ([0, -4, 12.6/2 - 1])
     {
-        box_walls(490-76, 115, 12.6, tabs_bottom=4);
+        box_walls(tabs_bottom=4);
     }
 }
 translate ([0, -4, 12.6/2])
 {
-    box_walls(490-76, 115, 12.6);
+    box_walls();
 }
 translate ([0, 0, -1.5])
 {
