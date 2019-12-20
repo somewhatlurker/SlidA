@@ -207,7 +207,7 @@ module slider_cover(width = 470, height = 136, thickness = 1.5)
 
 module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0, tab_count = 3)
 {   
-    tab_width = width / (tab_count*2+1);
+    tab_width = width / (tab_count*2);
     
     color ("black", 0.4)
     rotate ([90, 0, 0])
@@ -221,11 +221,11 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0, tab
             }
             for (i=[0:tab_count-1])
             {
-                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), -height/2 - tabs_top])
+                translate ([-width/2 + tab_width * (i*2+0.5), -height/2 - tabs_top])
                 {
                     square([tab_width, tabs_top]);
                 }
-                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), height/2])
+                translate ([-width/2 + tab_width * (i*2+0.5), height/2])
                 {
                     square([tab_width, tabs_bottom]);
                 }
