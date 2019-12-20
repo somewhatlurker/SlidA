@@ -17,21 +17,30 @@ module slider_holes (n = 4)
         {
             translate ([hole_dist_x, hole_dist_y, 0])
             {
-                circle(hole_size/2);
+                circle(hole_size/2, $fn=32);
             }
             translate ([width_main - hole_dist_x, hole_dist_y, 0])
             {
-                circle(hole_size/2);
+                circle(hole_size/2, $fn=32);
             }
             translate ([hole_dist_x, height_total - hole_dist_y, 0])
             {
-                circle(hole_size/2);
+                circle(hole_size/2, $fn=32);
             }
             translate ([width_main - hole_dist_x, height_total - hole_dist_y, 0])
             {
-                circle(hole_size/2);
+                circle(hole_size/2, $fn=32);
             }
         }
+    }
+    
+    translate ([(-width_main/2) * n - hole_size/2 - 1.57, 0, 0])
+    {
+        circle(hole_size/2, $fn=32);
+    }
+    translate ([(width_main/2) * n + hole_size/2 + 1.57, 0, 0])
+    {
+        circle(hole_size/2, $fn=32);
     }
 }
 
@@ -75,11 +84,11 @@ module slider_pcbs (n = 4)
                     // main body corners
                     translate ([corner_rad, height_total - corner_rad, 0])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false);
+                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
                     }
                     translate ([width_main - corner_rad, height_total - corner_rad, 0])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false);
+                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
                     }
                     
                     // led section full width (not full height)
@@ -96,11 +105,11 @@ module slider_pcbs (n = 4)
                     // led section corners
                     translate ([led_x_offset + corner_rad, corner_rad, 0])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false);
+                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
                     }
                     translate ([led_x_offset + width_main - corner_rad, corner_rad, 0])
                     {
-                        cylinder(h = thickness, r = corner_rad, center = false);
+                        cylinder(h = thickness, r = corner_rad, center = false, $fn=32);
                     }
                 }
             }
@@ -113,7 +122,7 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = 97*4 + 3, height = 81, thickness = 3)
+module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
 {
     key_count = 16;
     sep_count = 17;
@@ -266,4 +275,9 @@ difference () // bottom
 translate ([0, -4, 12.6/2])
 {
     box_walls(490-76, 115, 12.6);
+}
+translate ([0, 0, -1.5])
+{
+    //linear_extrude (height = 16.1)
+    //slider_holes();
 }
