@@ -160,11 +160,11 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
     }
 }
 
-module slider_cover(width = 500, height = 143, thickness = 1.5)
+module slider_cover(width = 500, height = 145, thickness = 1.5)
 {   
     bevel_x = 33 / (width/2);
     bevel_y = 48 / (height/2);
-    y_offset = -6;
+    y_offset = -5;
     
     color ("gray", 0.1)
     linear_extrude (height = thickness)
@@ -213,7 +213,7 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
     }
 }
 
-module box_walls(width = 500-72, depth = 136, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module box_walls(width = 500-72, depth = 138, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
 {
     union ()
     {
@@ -281,7 +281,7 @@ difference () // top
     {
         slider_cover();
     }
-    translate ([0, -4, 12.6/2 + 1])
+    translate ([0, -3, 12.6/2 + 1])
     {
         box_walls(tabs_top=4);
     }
@@ -293,14 +293,14 @@ difference () // bottom
         color ("black", 0.4)
         slider_cover(560, thickness = 2);
     }
-    translate ([0, -4, 12.6/2 - 1])
+    translate ([0, -3, 12.6/2 - 1])
     {
         box_walls(tabs_bottom=4);
     }
 }
 difference ()
 {
-    translate ([0, -4, 12.6/2])
+    translate ([0, -3, 12.6/2])
     {
         box_walls();
     }
