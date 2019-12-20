@@ -160,11 +160,11 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
     }
 }
 
-module slider_cover(width = 490, height = 125, thickness = 1.5)
+module slider_cover(width = 500, height = 143, thickness = 1.5)
 {   
-    bevel_x = 37 / (width/2);
-    bevel_y = 44 / (height/2);
-    y_offset = -5;
+    bevel_x = 33 / (width/2);
+    bevel_y = 48 / (height/2);
+    y_offset = -6;
     
     color ("gray", 0.1)
     linear_extrude (height = thickness)
@@ -213,7 +213,7 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
     }
 }
 
-module box_walls(width = 490-76, depth = 115, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module box_walls(width = 500-72, depth = 136, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
 {
     union ()
     {
@@ -239,6 +239,34 @@ module box_walls(width = 490-76, depth = 115, height = 12.6, thickness = 2, tabs
                 wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
             }
         }
+    }
+}
+
+module microusb_port(thickness = 27)
+{
+    screw_distance = 28;
+    screw_size = 2.3;
+    
+    color ("red", 1)
+    linear_extrude (height = thickness)
+    union ()
+    {
+        translate ([-screw_distance/2, 0])
+        {
+            circle(r = screw_size/2, $fn=32);
+        }
+        translate ([screw_distance/2, 0])
+        {
+            circle(r = screw_size/2, $fn=32);
+        }
+        square([10.6, 8.5], center=true);
+    }
+    
+    color ("red", 1)
+    translate ([0, 0, -5])
+    {
+        linear_extrude (height = thickness)
+        circle(r = 5/2, $fn=32);
     }
 }
 
@@ -270,12 +298,29 @@ difference () // bottom
         box_walls(tabs_bottom=4);
     }
 }
-translate ([0, -4, 12.6/2])
+difference ()
 {
-    box_walls();
+    translate ([0, -4, 12.6/2])
+    {
+        box_walls();
+    }
+    translate ([0, -48, 7.4])
+    {
+        rotate ([90, 0, 0])
+        {
+            microusb_port();
+        }
+    }
 }
 translate ([0, 0, -1.5])
 {
     //linear_extrude (height = 16.1)
     //slider_holes();
+}
+translate ([0, -48, 7.4])
+{
+    rotate ([90, 0, 0])
+    {
+        //microusb_port();
+    }
 }
