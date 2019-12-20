@@ -45,7 +45,7 @@ module slider_pcbs (n = 4)
     led_height = 8.1;
     
     height_total = height_main + led_height;
-    width_total = width_main + led_offset;
+    width_total = width_main + led_x_offset;
 
     corner_rad = 1.27;
     hole_dist_x = 6.175;
@@ -105,8 +105,11 @@ module slider_pcbs (n = 4)
                 }
             }
         }
-        linear_extrude (height = thickness)
-        slider_holes(n);
+        translate ([0, 0, -.5])
+        {
+            linear_extrude (height = thickness + 1)
+            slider_holes(n);
+        }
     }
 }
 
@@ -147,7 +150,7 @@ module slider_keys (width = 97*4 + 3, height = 81, thickness = 3)
     }
 }
 
-module slider_cover(width = 480, height = 120, thickness = 1.5)
+module slider_cover(width = 490, height = 125, thickness = 1.5)
 {   
     bevel_x = 0.15;
     bevel_y = 0.7;
@@ -165,8 +168,70 @@ module slider_cover(width = 480, height = 120, thickness = 1.5)
                                 [1-bevel_x,1], [-1+bevel_x,1], [-1,1-bevel_y], [-1,-1+bevel_y]]);
             }
         }
-        linear_extrude (height = thickness)
-        slider_holes();
+        translate ([0, 0, -.5])
+        {
+            linear_extrude (height = thickness + 1)
+            slider_holes();
+        }
+    }
+}
+
+
+module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+{   
+    tab_count = 3;
+    tab_width = width / (tab_count*2+1);
+    
+    color ("black", 0.4)
+    rotate ([90, 0, 0])
+    {
+        union ()
+        {
+            translate ([-width/2, -height/2, 0])
+            {
+                cube([width, height, thickness]);
+            }
+            for (i=[0:tab_count-1])
+            {
+                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), -height/2 - tabs_top, 0])
+                {
+                    cube([tab_width, tabs_top, thickness]);
+                }
+                translate ([-width/2 + width / (tab_count*2+1) * (i*2+1), height/2, 0])
+                {
+                    cube([tab_width, tabs_bottom, thickness]);
+                }
+            }
+        }
+    }
+}
+
+module box_walls(width, depth, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+{
+    union ()
+    {
+        translate ([0, -depth/2, 0])
+        {
+            wall(width, height, thickness, tabs_top, tabs_bottom);
+        }
+        translate ([0, depth/2-thickness, 0])
+        {
+            wall(width, height, thickness, tabs_top, tabs_bottom);
+        }
+        translate ([-width/2, -thickness, 0])
+        {
+            rotate ([0, 0, 90])
+            {
+                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+            }
+        }
+        translate ([width/2, -thickness, 0])
+        {
+            rotate ([0, 0, -90])
+            {
+                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+            }
+        }
     }
 }
 
@@ -175,7 +240,30 @@ translate ([0, 0, 3])
 {
     slider_pcbs();
 }
-translate ([0, 0, -1.5])
+difference () // top
 {
-    slider_cover();
+    translate ([0, 0, -1.5])
+    {
+        slider_cover(490);
+    }
+    translate ([0, -4, 12.6/2 + 1])
+    {
+        box_walls(490-76, 115, 12.6, tabs_top=4);
+    }
+}
+difference () // bottom
+{
+    translate ([0, 0, 12.6])
+    {
+        color ("black", 0.4)
+        slider_cover(490, thickness = 2);
+    }
+    translate ([0, -4, 12.6/2 - 1])
+    {
+        box_walls(490-76, 115, 12.6, tabs_bottom=4);
+    }
+}
+translate ([0, -4, 12.6/2])
+{
+    box_walls(490-76, 115, 12.6);
 }
