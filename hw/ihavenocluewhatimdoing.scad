@@ -127,18 +127,17 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, spacing = 0, top_bottom_border = 1.5)
 {
     key_count = 16;
     sep_count = 17;
     key_width = (width - sep_count * key_separator_width) / key_count;
-    top_bottom_border = 1.5;
     
     color("blue", 1.0)
     linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (key_separator_width + key_width) * i + key_separator_width, -height/2])
+        translate ([-width/2 + (key_separator_width + key_width + spacing*2) * i + key_separator_width, -height/2])
         {
             square([key_width, height]);
         }
@@ -148,20 +147,20 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     linear_extrude (height = thickness)
     for (i=[0:sep_count-1])
     {
-        translate ([-width/2 + (key_separator_width + key_width) * i, -height/2])
+        translate ([-width/2 + (key_separator_width + key_width + spacing*2) * i - spacing, -height/2])
         {
             square([key_separator_width, height]);
         }
     }
     color("green", 1.0)
     linear_extrude (height = thickness)
-    translate ([-width/2, -height/2 - top_bottom_border])
+    translate ([-width/2, -height/2 - top_bottom_border - spacing])
     {
         square([width, top_bottom_border]);
     }
     color("green", 1.0)
     linear_extrude (height = thickness)
-    translate ([-width/2, height/2])
+    translate ([-width/2, height/2 + spacing])
     {
         square([width, top_bottom_border]);
     }
@@ -272,6 +271,33 @@ module box_walls(width = top_width - 53, depth = slider_height - 7, height = wal
     }
 }
 
+module box_walls_flat(width = top_width - 53, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
+{
+    // note that the rear panel isn't moved so that the cutouts are easier
+    
+    height_off = height + tabs_top + tabs_bottom + 1;
+    
+    union ()
+    {
+        translate ([0, -depth/2, height_off])
+        {
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+        }
+        translate ([0, -depth/2, 0])
+        {
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+        }
+        translate ([0, -depth/2, -height_off])
+        {
+            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+        }
+        translate ([0, -depth/2, -height_off*2])
+        {
+            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+        }
+    }
+}
+
 module microusb_port(thickness = 26 + wall_thickness)
 {
     screw_distance = 28;
@@ -354,92 +380,177 @@ module tact_hole(depth = 7, retainer_thickness = 3)
     }
 }
 
-slider_keys();
-translate ([0, 0, key_thickness])
+module slider_3d()
 {
-    slider_pcbs();
-}
-difference () // top
-{
-    translate ([0, 0, -top_thickness])
+    slider_keys();
+    translate ([0, 0, key_thickness])
     {
-        slider_cover();
+        slider_pcbs();
     }
-    translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
+    difference () // top
     {
-        box_walls(tabs_top = top_thickness + 2);
-    }
-}
-difference () // bottom
-{
-    translate ([0, 0, wall_height])
-    {
-        color ("black", 0.4)
-        slider_cover(bottom_width, thickness = bottom_thickness);
-    }
-    translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
-    {
-        box_walls(tabs_bottom = bottom_thickness + 2);
-    }
-    translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
-    {
-        rotate ([90, 0, 0])
+        translate ([0, 0, -top_thickness])
         {
-            tact_hole();
+            slider_cover();
+        }
+        translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
+        {
+            box_walls(tabs_top = top_thickness + 2);
         }
     }
-}
-difference ()
-{
-    translate ([0, slider_y_adjust + wall_thickness, wall_height/2])
+    difference () // bottom
     {
-        box_walls();
+        translate ([0, 0, wall_height])
+        {
+            color ("black", 0.4)
+            slider_cover(bottom_width, thickness = bottom_thickness);
+        }
+        translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
+        {
+            box_walls(tabs_bottom = bottom_thickness + 2);
+        }
+        translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+        {
+            rotate ([90, 0, 0])
+            {
+                tact_hole();
+            }
+        }
+    }
+    difference ()
+    {
+        translate ([0, slider_y_adjust + wall_thickness, wall_height/2])
+        {
+            box_walls();
+        }
+        translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
+        {
+            rotate ([90, 0, 0])
+            {
+                microusb_port();
+            }
+        }
+        translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+        {
+            rotate ([90, 0, 0])
+            {
+                switch_hole();
+            }
+        }
+        translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+        {
+            rotate ([90, 0, 0])
+            {
+                tact_hole();
+            }
+        }
+    }
+    translate ([0, 0, -top_thickness])
+    {
+        //linear_extrude (height = full_height)
+        //slider_holes();
     }
     translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
     {
         rotate ([90, 0, 0])
         {
-            microusb_port();
+            //microusb_port();
         }
     }
     translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
-            switch_hole();
+            //switch_hole();
         }
     }
     translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
-            tact_hole();
+            //tact_hole();
         }
     }
 }
-translate ([0, 0, -top_thickness])
+
+module slider_2d()
 {
-    //linear_extrude (height = full_height)
-    //slider_holes();
-}
-translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
-{
-    rotate ([90, 0, 0])
+    slider_keys(spacing = 0.5, top_bottom_border = 2.5);
+    translate ([0, 125, top_thickness])
     {
-        //microusb_port();
+        difference () // top
+        {
+            translate ([0, 0, -top_thickness])
+            {
+                slider_cover();
+            }
+            translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
+            {
+                box_walls(tabs_top = top_thickness + 2);
+            }
+        }
+    }
+    translate ([0, 265, -wall_height])
+    {
+        difference () // bottom
+        {
+            translate ([0, 0, wall_height])
+            {
+                color ("black", 0.4)
+                slider_cover(bottom_width, thickness = bottom_thickness);
+            }
+            translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
+            {
+                box_walls(tabs_bottom = bottom_thickness + 2);
+            }
+            translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+            {
+                rotate ([90, 0, 0])
+                {
+                    tact_hole();
+                }
+            }
+        }
+    }
+    translate ([0, -85, slider_height/2 - slider_y_adjust - wall_thickness - 2])
+    {
+        rotate([90, 0, 0])
+        {
+            difference ()
+            {
+                translate ([0, slider_y_adjust + wall_thickness, wall_height/2])
+                {
+                    box_walls_flat();
+                }
+                translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
+                {
+                    rotate ([90, 0, 0])
+                    {
+                        microusb_port();
+                    }
+                }
+                translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+                {
+                    rotate ([90, 0, 0])
+                    {
+                        switch_hole();
+                    }
+                }
+                translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+                {
+                    rotate ([90, 0, 0])
+                    {
+                        tact_hole();
+                    }
+                }
+            }
+        }
     }
 }
-translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+
+slider_3d();
+
+projection()
 {
-    rotate ([90, 0, 0])
-    {
-        //switch_hole();
-    }
-}
-translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
-{
-    rotate ([90, 0, 0])
-    {
-        //tact_hole();
-    }
+    //slider_2d();
 }
