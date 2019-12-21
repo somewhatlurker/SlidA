@@ -326,7 +326,7 @@ module tact_hole(depth = 7, retainer_thickness = 3)
     hole_size = 3.8;
     box_size = 6;
     retainer_hole_size = 2.2;
-    retainer_hole_gap = 1;
+    retainer_hole_gap = (4-retainer_hole_size)/2;
     
     color ("red", 1)
     linear_extrude (height = depth)

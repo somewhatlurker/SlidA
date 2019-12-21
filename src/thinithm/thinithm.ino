@@ -21,6 +21,8 @@ CRGB sliderLeds[NUM_SLIDER_LEDS];
 
 #define RGB_BRIGHTNESS 127
 
+#define MODE_LED_RGB_INDEX NUM_SLIDER_LEDS-1
+
 
 // status/error LED state
 enum errorState : byte {
@@ -148,7 +150,7 @@ void setScanning(bool on_off) {
 int curSliderPatternByte;
 int sleepTime = LOOP_SLEEP_US;
 unsigned long lastSliderSendMillis;
-unsigned long lastSerialRecvMillis;
+unsigned long lastSerialRecvMillis = -5000;
 unsigned long loopCount = 0;
 
 void loop() {
@@ -236,11 +238,39 @@ void loop() {
   }
 
   // disable scan and set error if serial is dead
-  if ((millis() - lastSerialRecvMillis) > 10000) {
+  if ((millis() - lastSerialRecvMillis) > 5000) {
     if (scanOn) {
       setScanning(false);
     }
     curError |= ERRORSTATE_SERIAL_RX;
+
+    
+    // set mode colour for 5s (this should trigger at boot)
+    // also use this to black out slider
+    if ((millis() - lastSerialRecvMillis) < 10000) {
+      FastLED.setBrightness(RGB_BRIGHTNESS);
+
+      for (int i = 0; i < NUM_SLIDER_LEDS; i++) {
+        sliderLeds[i] = CRGB::Black;
+      }
+      
+      switch(curSliderMode) {
+        case SLIDER_TYPE_DIVA:
+          sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Teal;
+          break;
+        default:
+          sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Olive;
+          break;
+      }
+
+      FastLED.show();
+    }
+    else {
+      if (sliderLeds[MODE_LED_RGB_INDEX] != (CRGB)CRGB::Black) {
+        sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Black;
+        FastLED.show();
+      }
+    }
   }
 
   
