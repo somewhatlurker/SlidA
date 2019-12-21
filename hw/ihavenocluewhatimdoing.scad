@@ -1,11 +1,3 @@
-key_area_width = 391; // 97*4 + 3
-key_area_height = 81.1;
-
-slider_height = 136;
-top_width = 470;
-bottom_width = 530;
-slider_y_adjust = -9.5;
-
 pcb_width_main = 97;
 pcb_width_ledsoffset = 3;
 pcb_width_total = pcb_width_main + pcb_width_ledsoffset;
@@ -26,6 +18,16 @@ wall_thickness = 2;
 
 wall_height = key_thickness + pcb_thickness + space_thickness;
 full_height = top_thickness + wall_height + bottom_thickness;
+
+slider_height = 136;
+top_width = 470;
+bottom_width = 530;
+slider_y_adjust = -9.5;
+
+key_separator_width = 3;
+key_top_bottom_padding = 1.5;
+key_area_width = pcb_width_main * 4 + key_separator_width;
+key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top_bottom_padding*2 - .15;
 
 
 module slider_holes (n = 4)
@@ -53,11 +55,11 @@ module slider_holes (n = 4)
         }
     }
     
-    translate ([-key_area_width/2 - 1.67, 0, 0])
+    translate ([-key_area_width/2 - pcb_hole_size/2 - .07, 0, 0])
     {
         circle(pcb_hole_size/2, $fn=32);
     }
-    translate ([key_area_width/2 + 1.67, 0, 0])
+    translate ([key_area_width/2 + pcb_hole_size/2 + .07, 0, 0])
     {
         circle(pcb_hole_size/2, $fn=32);
     }
@@ -129,15 +131,14 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
 {
     key_count = 16;
     sep_count = 17;
-    sep_width = 3;
-    key_width = (width - sep_count * sep_width) / key_count;
+    key_width = (width - sep_count * key_separator_width) / key_count;
     top_bottom_border = 1.5;
     
     color("blue", 1.0)
     linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width) * i + sep_width, -height/2])
+        translate ([-width/2 + (key_separator_width + key_width) * i + key_separator_width, -height/2])
         {
             square([key_width, height]);
         }
@@ -147,9 +148,9 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     linear_extrude (height = thickness)
     for (i=[0:sep_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width) * i, -height/2])
+        translate ([-width/2 + (key_separator_width + key_width) * i, -height/2])
         {
-            square([sep_width, height]);
+            square([key_separator_width, height]);
         }
     }
     color("green", 1.0)
