@@ -177,10 +177,12 @@ module slider_cover(width = 470, height = 136, thickness = 1.5)
     {
         translate ([0, y_offset])
         {
-            scale ([width/2, height/2])
+            scale ([width, height])
             {
-                polygon(points=[[-1+bevel_x/(width/2),-1], [1-bevel_x/(width/2),-1], [1,-1+bevel_y/(height/2)], [1,1-bevel_y/(height/2)],
-                                [1-bevel_x/(width/2),1], [-1+bevel_x/(width/2),1], [-1,1-bevel_y/(height/2)], [-1,-1+bevel_y/(height/2)]]);
+                polygon(points=[[-.5+bevel_x/width,-.5], [.5-bevel_x/width,-.5],
+                                [.5,-.5+bevel_y/height], [.5,.5-bevel_y/height],
+                                [.5-bevel_x/width,.5], [-.5+bevel_x/width,.5],
+                                [-.5,.5-bevel_y/height], [-.5,-.5+bevel_y/height]]);
             }
         }
         slider_holes();
@@ -319,6 +321,32 @@ module switch_hole(thickness = 8.5)
     }
 }
 
+module tact_hole(depth = 7, retainer_thickness = 3)
+{
+    hole_size = 3.8;
+    box_size = 6;
+    retainer_hole_size = 2.2;
+    retainer_hole_gap = 1;
+    
+    color ("red", 1)
+    linear_extrude (height = depth)
+    circle(r = hole_size/2, $fn=32);
+    
+    color ("red", 1)
+    linear_extrude (height = 3.5)
+    square(box_size, center=true);
+    
+    color ("red", 1)
+    translate ([0, retainer_thickness - 0.1, -retainer_hole_size/2 - retainer_hole_gap])
+    {
+        rotate ([-90, 0, 0])
+        {
+            linear_extrude (height = retainer_thickness + 0.1)
+            circle(r = retainer_hole_size/2, $fn=32);
+        }
+    }
+}
+
 slider_keys();
 translate ([0, 0, 3])
 {
@@ -346,6 +374,13 @@ difference () // bottom
     {
         box_walls(tabs_bottom=4);
     }
+    translate ([-100, -68.5, 9.4])
+    {
+        rotate ([90, 0, 0])
+        {
+            tact_hole();
+        }
+    }
 }
 difference ()
 {
@@ -360,11 +395,18 @@ difference ()
             microusb_port();
         }
     }
-    translate ([-50, -66, 7.4])
+    translate ([-75, -66, 9.4])
     {
         rotate ([90, 0, 0])
         {
             switch_hole();
+        }
+    }
+    translate ([-100, -68.5, 9.4])
+    {
+        rotate ([90, 0, 0])
+        {
+            tact_hole();
         }
     }
 }
@@ -380,10 +422,17 @@ translate ([0, -47, 7.4])
         //microusb_port();
     }
 }
-translate ([-50, -66, 7.4])
+translate ([-75, -66, 9.4])
 {
     rotate ([90, 0, 0])
     {
         //switch_hole();
+    }
+}
+translate ([-100, -68.5, 9.4])
+{
+    rotate ([90, 0, 0])
+    {
+        //tact_hole();
     }
 }
