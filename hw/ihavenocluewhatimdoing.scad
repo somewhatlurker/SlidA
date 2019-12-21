@@ -29,6 +29,8 @@ key_top_bottom_padding = 1.5;
 key_area_width = pcb_width_main * 4 + key_separator_width;
 key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top_bottom_padding*2 - .15;
 
+tab_tolerance = 0.1;
+
 
 module slider_holes (n = 4)
 {
@@ -395,7 +397,11 @@ module slider_3d()
         }
         translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
         {
-            box_walls(tabs_top = top_thickness + 2);
+            minkowski()
+            {
+                box_walls(tabs_top = top_thickness + 2);
+                cube(tab_tolerance*2, center = true);
+            }
         }
     }
     difference () // bottom
@@ -407,7 +413,11 @@ module slider_3d()
         }
         translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
         {
-            box_walls(tabs_bottom = bottom_thickness + 2);
+            minkowski()
+            {
+                box_walls(tabs_bottom = bottom_thickness + 2);
+                cube(tab_tolerance*2, center = true);
+            }
         }
         translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
         {
@@ -486,7 +496,11 @@ module slider_2d()
             }
             translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
             {
-                box_walls(tabs_top = top_thickness + 2);
+                minkowski()
+                {
+                    box_walls(tabs_top = top_thickness + 2);
+                    cube(tab_tolerance*2, center = true);
+                }
             }
         }
     }
@@ -501,7 +515,11 @@ module slider_2d()
             }
             translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
             {
-                box_walls(tabs_bottom = bottom_thickness + 2);
+                minkowski()
+                {
+                    box_walls(tabs_bottom = bottom_thickness + 2);
+                    cube(tab_tolerance*2, center = true);
+                }
             }
             translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
             {
