@@ -1,114 +1,120 @@
+key_area_width = 391; // 97*4 + 3
+key_area_height = 81.1;
+
+slider_height = 136;
+top_width = 470;
+bottom_width = 530;
+slider_y_adjust = -9.5;
+
+pcb_width_main = 97;
+pcb_width_ledsoffset = 3;
+pcb_width_total = pcb_width_main + pcb_width_ledsoffset;
+pcb_height_main = 85.7;
+pcb_height_leds = 8.1;
+pcb_height_total = pcb_height_main + pcb_height_leds;
+
+pcb_hole_dist_x = 6.175;
+pcb_hole_dist_y = 3.175;
+pcb_hole_size = 3.2;
+
+top_thickness = 1.5;
+key_thickness = 3;
+pcb_thickness = 1.6;
+space_thickness = 8;
+bottom_thickness = 2;
+wall_thickness = 2;
+
+wall_height = key_thickness + pcb_thickness + space_thickness;
+full_height = top_thickness + wall_height + bottom_thickness;
+
 
 module slider_holes (n = 4)
 {
-    height_main = 85.7;
-    width_main = 97;
-    led_height = 8.1;
-    
-    height_total = height_main + led_height;
-
-    hole_dist_x = 6.175;
-    hole_dist_y = 3.175;
-    hole_size = 3.2;
-    
     for (i=[0:n-1])
     {
-        translate ([(-width_main/2) * n + width_main * i, -height_total/2, 0])
+        translate ([(-pcb_width_main/2) * n + pcb_width_main * i, -pcb_height_total/2, 0])
         {
-            translate ([hole_dist_x, hole_dist_y, 0])
+            translate ([pcb_hole_dist_x, pcb_hole_dist_y, 0])
             {
-                circle(hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=32);
             }
-            translate ([width_main - hole_dist_x, hole_dist_y, 0])
+            translate ([pcb_width_main - pcb_hole_dist_x, pcb_hole_dist_y, 0])
             {
-                circle(hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=32);
             }
-            translate ([hole_dist_x, height_total - hole_dist_y, 0])
+            translate ([pcb_hole_dist_x, pcb_height_total - pcb_hole_dist_y, 0])
             {
-                circle(hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=32);
             }
-            translate ([width_main - hole_dist_x, height_total - hole_dist_y, 0])
+            translate ([pcb_width_main - pcb_hole_dist_x, pcb_height_total - pcb_hole_dist_y, 0])
             {
-                circle(hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=32);
             }
         }
     }
     
-    translate ([(-width_main/2) * n - hole_size/2 - 1.57, 0, 0])
+    translate ([-key_area_width/2 - 1.67, 0, 0])
     {
-        circle(hole_size/2, $fn=32);
+        circle(pcb_hole_size/2, $fn=32);
     }
-    translate ([(width_main/2) * n + hole_size/2 + 1.57, 0, 0])
+    translate ([key_area_width/2 + 1.67, 0, 0])
     {
-        circle(hole_size/2, $fn=32);
+        circle(pcb_hole_size/2, $fn=32);
     }
 }
 
 module slider_pcbs (n = 4)
 {
-    thickness = 1.6;
-    height_main = 85.7;
-    width_main = 97;
-    
-    led_x_offset = 3;
-    led_height = 8.1;
-    
-    height_total = height_main + led_height;
-    width_total = width_main + led_x_offset;
-
     corner_rad = 1.27;
-    hole_dist_x = 6.175;
-    hole_dist_y = 3.175;
-    hole_size = 3.2;
     
     color("white", 1.0)
-    linear_extrude (height = thickness)
+    linear_extrude (height = pcb_thickness)
     difference ()
     {
         for (i=[0:n-1])
         {
-            translate ([(-width_main/2) * n + width_main * i, -height_total/2])
+            translate ([(-pcb_width_main/2) * n + pcb_width_main * i, -pcb_height_total/2])
             {
                 union ()
                 {
                     // main body full width (not full height)
-                    translate ([0, led_height])
+                    translate ([0, pcb_height_leds])
                     {
-                        square([width_main, height_main - corner_rad]);
+                        square([pcb_width_main, pcb_height_main - corner_rad]);
                     }
                     // main body full height (not full width)
-                    translate ([corner_rad, led_height])
+                    translate ([corner_rad, pcb_height_leds])
                     {
-                        square([width_main - corner_rad * 2, height_main]);
+                        square([pcb_width_main - corner_rad * 2, pcb_height_main]);
                     }
     
                     // main body corners
-                    translate ([corner_rad, height_total - corner_rad])
+                    translate ([corner_rad, pcb_height_total - corner_rad])
                     {
                         circle(r = corner_rad, $fn=32);
                     }
-                    translate ([width_main - corner_rad, height_total - corner_rad])
+                    translate ([pcb_width_main - corner_rad, pcb_height_total - corner_rad])
                     {
                         circle(r = corner_rad, $fn=32);
                     }
                     
                     // led section full width (not full height)
-                    translate ([led_x_offset, corner_rad])
+                    translate ([pcb_width_ledsoffset, corner_rad])
                     {
-                        square([width_main, led_height - corner_rad]);
+                        square([pcb_width_main, pcb_height_leds - corner_rad]);
                     }
                     // led section full height (not full width)
-                    translate ([led_x_offset + corner_rad, 0])
+                    translate ([pcb_width_ledsoffset + corner_rad, 0])
                     {
-                        square([width_main - corner_rad * 2, led_height]);
+                        square([pcb_width_main - corner_rad * 2, pcb_height_leds]);
                     }
                     
                     // led section corners
-                    translate ([led_x_offset + corner_rad, corner_rad])
+                    translate ([pcb_width_ledsoffset + corner_rad, corner_rad])
                     {
                         circle(r = corner_rad, $fn=32);
                     }
-                    translate ([led_x_offset + width_main - corner_rad, corner_rad])
+                    translate ([pcb_width_ledsoffset + pcb_width_main - corner_rad, corner_rad])
                     {
                         circle(r = corner_rad, $fn=32);
                     }
@@ -119,7 +125,7 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness)
 {
     key_count = 16;
     sep_count = 17;
@@ -160,15 +166,15 @@ module slider_keys (width = 97*4 + 3, height = 81.1, thickness = 3)
     }
 }
 
-module slider_cover(width = 470, height = 136, thickness = 1.5)
+module slider_cover(width = top_width, height = slider_height, thickness = top_thickness)
 {   
     bevel_x = 26;
     bevel_y = 52;
-    y_offset = -9.5;
+    y_offset = slider_y_adjust;
     
     extra_hole_size = 3.3;
-    extra_hole_x1 = 145.5;
-    extra_hole_x2 = 48.5;
+    extra_hole_x1 = pcb_width_main * 1.5;
+    extra_hole_x2 = pcb_width_main * 0.5;
     extra_hole_margin_y = 14;
     
     color ("gray", 0.1)
@@ -207,7 +213,7 @@ module slider_cover(width = 470, height = 136, thickness = 1.5)
 }
 
 
-module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0, tab_count = 3)
+module wall(width, height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness, tab_count = 3)
 {   
     tab_width = width / (tab_count*2);
     
@@ -236,7 +242,7 @@ module wall(width, height, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0, tab
     }
 }
 
-module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_top = 1.5, tabs_bottom = 2.0)
+module box_walls(width = top_width - 53, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
 {
     union ()
     {
@@ -265,7 +271,7 @@ module box_walls(width = 417, depth = 129, height = 12.6, thickness = 2, tabs_to
     }
 }
 
-module microusb_port(thickness = 28)
+module microusb_port(thickness = 26 + wall_thickness)
 {
     screw_distance = 28;
     screw_size = 3;
@@ -293,7 +299,7 @@ module microusb_port(thickness = 28)
     }
 }
 
-module switch_hole(thickness = 8.5)
+module switch_hole(thickness = 6.5 + wall_thickness)
 {
     screw_distance = 15;
     screw_size = 2.2;
@@ -348,33 +354,33 @@ module tact_hole(depth = 7, retainer_thickness = 3)
 }
 
 slider_keys();
-translate ([0, 0, 3])
+translate ([0, 0, key_thickness])
 {
     slider_pcbs();
 }
 difference () // top
 {
-    translate ([0, 0, -1.5])
+    translate ([0, 0, -top_thickness])
     {
         slider_cover();
     }
-    translate ([0, -7.5, 12.6/2 + 1])
+    translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
     {
-        box_walls(tabs_top=4);
+        box_walls(tabs_top = top_thickness + 2);
     }
 }
 difference () // bottom
 {
-    translate ([0, 0, 12.6])
+    translate ([0, 0, wall_height])
     {
         color ("black", 0.4)
-        slider_cover(530, thickness = 2);
+        slider_cover(bottom_width, thickness = bottom_thickness);
     }
-    translate ([0, -7.5, 12.6/2 - 1])
+    translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
     {
-        box_walls(tabs_bottom=4);
+        box_walls(tabs_bottom = bottom_thickness + 2);
     }
-    translate ([-100, -68.5, 9.4])
+    translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
@@ -384,25 +390,25 @@ difference () // bottom
 }
 difference ()
 {
-    translate ([0, -7.5, 12.6/2])
+    translate ([0, slider_y_adjust + wall_thickness, wall_height/2])
     {
         box_walls();
     }
-    translate ([0, -47, 7.4])
+    translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
     {
         rotate ([90, 0, 0])
         {
             microusb_port();
         }
     }
-    translate ([-75, -66, 9.4])
+    translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
             switch_hole();
         }
     }
-    translate ([-100, -68.5, 9.4])
+    translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
@@ -410,26 +416,26 @@ difference ()
         }
     }
 }
-translate ([0, 0, -1.5])
+translate ([0, 0, -top_thickness])
 {
-    //linear_extrude (height = 16.1)
+    //linear_extrude (height = full_height)
     //slider_holes();
 }
-translate ([0, -47, 7.4])
+translate ([0, -slider_height/2 + slider_y_adjust - wall_thickness + 32.5, wall_height - 5.2])
 {
     rotate ([90, 0, 0])
     {
         //microusb_port();
     }
 }
-translate ([-75, -66, 9.4])
+translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
 {
     rotate ([90, 0, 0])
     {
         //switch_hole();
     }
 }
-translate ([-100, -68.5, 9.4])
+translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
 {
     rotate ([90, 0, 0])
     {
