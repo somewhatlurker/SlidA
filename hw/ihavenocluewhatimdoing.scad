@@ -133,19 +133,21 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, sep_width = key_separator_width, spacing = 0, top_bottom_border = key_top_bottom_padding)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, kerf_adj = 0, spacing = 0, top_bottom_border = key_top_bottom_padding)
 {
     key_count = 16;
     sep_count = 17;
-    key_width = (width - sep_count * sep_width) / key_count;
+    sep_width = key_separator_width + kerf_adj;
+    key_width = ((width - sep_count * key_separator_width) / key_count) + kerf_adj;
+    key_height = height + kerf_adj;
     
     color("blue", 1.0)
     linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width + spacing*2) * i + sep_width, -height/2])
+        translate ([-width/2 + (sep_width + key_width + spacing*2) * i + sep_width, -key_height/2])
         {
-            square([key_width, height]);
+            square([key_width, key_height]);
         }
     }
     
@@ -153,20 +155,20 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     linear_extrude (height = thickness)
     for (i=[0:sep_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width + spacing*2) * i - spacing, -height/2])
+        translate ([-width/2 + (sep_width + key_width + spacing*2) * i - spacing, -key_height/2])
         {
-            square([sep_width, height]);
+            square([sep_width, key_height]);
         }
     }
     color("green", 1.0)
     linear_extrude (height = thickness)
-    translate ([-width/2, -height/2 - top_bottom_border - spacing])
+    translate ([-width/2, -key_height/2 - top_bottom_border - spacing])
     {
         square([width, top_bottom_border]);
     }
     color("green", 1.0)
     linear_extrude (height = thickness)
-    translate ([-width/2, height/2 + spacing])
+    translate ([-width/2, key_height/2 + spacing])
     {
         square([width, top_bottom_border]);
     }
@@ -512,7 +514,7 @@ module slider_3d()
 
 module slider_2d()
 {
-    slider_keys (width = key_area_width + key_kerf_adjust*(16+17), height = key_area_height + key_kerf_adjust, sep_width = key_separator_width + key_kerf_adjust, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
+    slider_keys (width = key_area_width, height = key_area_height, kerf_adj = key_kerf_adjust, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
     translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + 2, top_thickness])
     {
         difference () // top
