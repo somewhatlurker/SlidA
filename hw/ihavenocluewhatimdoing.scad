@@ -70,20 +70,20 @@ module slider_holes (n = 4)
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
     
-    translate ([-key_area_width/2 - pcb_hole_size/2 - pcb_width_ledsoffset/2 - .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.2, 0])
+    translate ([-key_area_width/2 - pcb_hole_size/2 - pcb_width_ledsoffset/2 - .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.1, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
-    translate ([key_area_width/2 + pcb_hole_size/2 + pcb_width_ledsoffset/2 + .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.2, 0])
+    translate ([key_area_width/2 + pcb_hole_size/2 + pcb_width_ledsoffset/2 + .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.1, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
     
-    translate ([-key_area_width/2 - pcb_hole_size/2 - .15, key_area_height/2 + key_top_bottom_padding/2 - 0.2, 0])
+    translate ([-key_area_width/2 - pcb_hole_size/2 - pcb_width_ledsoffset/2 - .2, key_area_height/2 + key_top_bottom_padding/2 - 0.1, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
-    translate ([key_area_width/2 + pcb_hole_size/2 + .15, key_area_height/2 + key_top_bottom_padding/2 - 0.2, 0])
+    translate ([key_area_width/2 + pcb_hole_size/2 + pcb_width_ledsoffset/2 + .2, key_area_height/2 + key_top_bottom_padding/2 - 0.1, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
@@ -180,15 +180,24 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     }
     color("green", 1.0)
     linear_extrude (height = thickness)
-    translate ([-width/2, -key_height/2 - top_bottom_border - spacing])
     {
-        square([width, top_bottom_border]);
-    }
-    color("green", 1.0)
-    linear_extrude (height = thickness)
-    translate ([-width/2, key_height/2 + spacing])
-    {
-        square([width, top_bottom_border]);
+        translate ([-width/2 - pcb_width_ledsoffset/2, -key_height/2 - top_bottom_border - spacing])
+        {
+            square([width/2 + pcb_width_ledsoffset/2 + sep_width/2, top_bottom_border]);
+        }
+        translate ([sep_width/2 + spacing, -key_height/2 - top_bottom_border - spacing])
+        {
+            square([width/2 + pcb_width_ledsoffset/2 - sep_width/2, top_bottom_border]);
+        }
+        
+        translate ([-width/2 - pcb_width_ledsoffset/2, key_height/2 + spacing])
+        {
+            square([width/2 + pcb_width_ledsoffset/2 + sep_width/2, top_bottom_border]);
+        }
+        translate ([sep_width/2 + spacing, key_height/2 + spacing])
+        {
+            square([width/2 + pcb_width_ledsoffset/2 - sep_width/2, top_bottom_border]);
+        }
     }
 }
 
