@@ -512,10 +512,14 @@ module slider_3d()
     }
 }
 
-module slider_2d()
+module slider_2d_keys()
 {
-    slider_keys (width = key_area_width, height = key_area_height, kerf_adj = key_kerf_adjust, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
-    translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + 2, top_thickness])
+    slider_keys (kerf_adj = key_kerf_adjust, spacing = 0.4, top_bottom_border = 0);
+}
+
+module slider_2d_top()
+{
+    translate ([0, 0, top_thickness])
     {
         difference () // top
         {
@@ -533,7 +537,16 @@ module slider_2d()
             }
         }
     }
-    translate ([0, key_area_height/2 + key_kerf_adjust/2 + slider_height/2 - slider_y_adjust + key_thickness + slider_height + 4, -wall_height])
+    
+    translate ([0, - slider_height/2 + slider_y_adjust - key_thickness - 2, 0])
+    {
+        slider_keys (kerf_adj = -key_area_height, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
+    }
+}
+
+module slider_2d_bottom()
+{
+    translate ([0, 0, -wall_height])
     {
         difference () // bottom
         {
@@ -559,7 +572,11 @@ module slider_2d()
             }
         }
     }
-    translate ([0, -key_area_height/2 - key_kerf_adjust/2 - full_height*2 - key_thickness - 5, slider_height/2 - slider_y_adjust - wall_thickness - 2])
+}
+
+module slider_2d_walls()
+{
+    translate ([0, 0, slider_height/2 - slider_y_adjust - wall_thickness - 2])
     {
         rotate([90, 0, 0])
         {
@@ -595,9 +612,39 @@ module slider_2d()
     }
 }
 
+module slider_2d_full()
+{
+    translate ([0, - key_thickness - 2, 0])
+    {
+        slider_2d_keys();
+    }
+    
+    translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + 2, 0])
+    {
+        slider_2d_top();
+    }
+    
+    translate ([0, key_area_height/2 + key_kerf_adjust/2 + slider_height/2 - slider_y_adjust + key_thickness + slider_height + 4, 0])
+    {
+        slider_2d_bottom();
+    }
+    
+    translate ([0, -key_area_height/2 - key_kerf_adjust/2 - full_height*2 - key_thickness - 7, 0])
+    {
+        slider_2d_walls();
+    }
+}
+
 slider_3d();
+//slider_2d_full();
 
 projection()
 {
-    //slider_2d();
+    scale([1, -1, 1])
+    {
+        //slider_2d_keys();
+        //slider_2d_top();
+        //slider_2d_bottom();
+        //slider_2d_walls();
+    }
 }

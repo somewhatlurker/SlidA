@@ -5,12 +5,9 @@ Most sizes can be adjusted using the Customizer panel. After changing them, pres
 Always make sure there is sufficient clearance for parts, especially the micro USB connector.  
 - These can be seen in the 3D preview if you move the camera inside the model.
 
-When ready to create files for laser cutting, you need to comment out `slider_3d();` and uncomment `//slider_2d();` at
-the bottom of the file. The resulting "projection" can be saved as DXF or SVG for separation into separate files or
-further modifications.  
-The 2d projection will generate faster if you decrease hole resolution.
+To generate 2d files for cutting, you need to comment out `slider_3d();` and uncomment the `//slider_2d_***();` lines at
+the bottom of the file (inside the projection block) one-by-one. The resulting projections can be saved as DXF or SVG.  
+Projections will be faster if hole resolution is decreased.
 
-Everything will need to be flipped for the top-side to be up (because I was stupid and reversed the axis).
-
-When separating the vectors, note that the top and bottom padding of slider keys is intended to be cut from the same
-material as the top layer (not the key material). This way, it will be less affected by frosting.
+To preview the 2d design without exporting, you can use `slider_2d_full();` instead, which is a composite of all 2d
+modules. It's actually 3d because that renders faster than making a projection.
