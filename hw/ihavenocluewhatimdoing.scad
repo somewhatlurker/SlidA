@@ -69,6 +69,24 @@ module slider_holes (n = 4)
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
+    
+    translate ([-key_area_width/2 - pcb_hole_size/2 - pcb_width_ledsoffset/2 - .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.2, 0])
+    {
+        circle(pcb_hole_size/2, $fn=hole_resolution);
+    }
+    translate ([key_area_width/2 + pcb_hole_size/2 + pcb_width_ledsoffset/2 + .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.2, 0])
+    {
+        circle(pcb_hole_size/2, $fn=hole_resolution);
+    }
+    
+    translate ([-key_area_width/2 - pcb_hole_size/2 - .15, key_area_height/2 + key_top_bottom_padding/2 - 0.2, 0])
+    {
+        circle(pcb_hole_size/2, $fn=hole_resolution);
+    }
+    translate ([key_area_width/2 + pcb_hole_size/2 + .15, key_area_height/2 + key_top_bottom_padding/2 - 0.2, 0])
+    {
+        circle(pcb_hole_size/2, $fn=hole_resolution);
+    }
 }
 
 module slider_pcbs (n = 4)
@@ -181,8 +199,10 @@ module slider_cover(width = top_width, height = slider_height, thickness = top_t
     y_offset = slider_y_adjust;
     
     extra_hole_size = 3.3;
-    extra_hole_x1 = pcb_width_main * 1.5;
-    extra_hole_x2 = pcb_width_main * 0.5;
+    //extra_hole_x1 = pcb_width_main * 1.5;
+    //extra_hole_x2 = pcb_width_main * 0.5;
+    extra_hole_x1 = pcb_width_main * 1;
+    extra_hole_x2 = pcb_width_main * 1;
     extra_hole_margin_y = 14;
     
     color ("gray", 0.1)
@@ -423,19 +443,19 @@ module slider_3d()
             color ("black", 0.4)
             slider_cover(bottom_width, thickness = bottom_thickness);
             
-            translate ([-bottom_width/2 + 36, -slider_height/2 + slider_y_adjust + 16, bottom_thickness])
+            translate ([-bottom_width/2 + 44, -slider_height/2 + slider_y_adjust + 24, bottom_thickness])
             {
                 rubber_foot();
             }
-            translate ([bottom_width/2 - 36, -slider_height/2 + slider_y_adjust + 16, bottom_thickness])
+            translate ([bottom_width/2 - 44, -slider_height/2 + slider_y_adjust + 24, bottom_thickness])
             {
                 rubber_foot();
             }
-            translate ([-bottom_width/2 + 36, slider_height/2 + slider_y_adjust - 16, bottom_thickness])
+            translate ([-bottom_width/2 + 44, slider_height/2 + slider_y_adjust - 24, bottom_thickness])
             {
                 rubber_foot();
             }
-            translate ([bottom_width/2 - 36, slider_height/2 + slider_y_adjust - 16, bottom_thickness])
+            translate ([bottom_width/2 - 44, slider_height/2 + slider_y_adjust - 24, bottom_thickness])
             {
                 rubber_foot();
             }
@@ -448,7 +468,7 @@ module slider_3d()
                 cube(tab_tolerance*2, center = true);
             }
         }
-        translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+        translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
         {
             rotate ([90, 0, 0])
             {
@@ -469,14 +489,14 @@ module slider_3d()
                 microusb_port();
             }
         }
-        translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+        translate ([-80, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
         {
             rotate ([90, 0, 0])
             {
                 switch_hole();
             }
         }
-        translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+        translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
         {
             rotate ([90, 0, 0])
             {
@@ -496,14 +516,14 @@ module slider_3d()
             microusb_port();
         }
     }
-    translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+    translate ([-80, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
             switch_hole();
         }
     }
-    translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+    translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
@@ -563,7 +583,7 @@ module slider_2d_bottom()
                     cube(tab_tolerance*2, center = true);
                 }
             }
-            translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+            translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
             {
                 rotate ([90, 0, 0])
                 {
@@ -593,14 +613,14 @@ module slider_2d_walls()
                         microusb_port();
                     }
                 }
-                translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
+                translate ([-80, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
                 {
                     rotate ([90, 0, 0])
                     {
                         switch_hole();
                     }
                 }
-                translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
+                translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
                 {
                     rotate ([90, 0, 0])
                     {
