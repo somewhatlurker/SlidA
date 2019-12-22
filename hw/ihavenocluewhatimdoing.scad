@@ -7,7 +7,7 @@ pcb_height_total = pcb_height_main + pcb_height_leds;
 
 pcb_hole_dist_x = 6.175;
 pcb_hole_dist_y = 3.175;
-pcb_hole_size = 3.2;
+pcb_hole_size = 3.1;
 
 top_thickness = 1.5;
 key_thickness = 3;
@@ -27,11 +27,13 @@ slider_y_adjust = -9.5;
 key_separator_width = 3;
 key_top_bottom_padding = top_thickness;
 key_area_width = pcb_width_main * 4 + key_separator_width;
-key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top_bottom_padding*2 - .15;
+key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top_bottom_padding*2 - .25;
 
-tab_tolerance = 0.1;
+tab_tolerance = 0.05;
 
 hole_resolution = 50;
+
+key_kerf_adjust = 0.18;
 
 
 module slider_holes (n = 4)
@@ -59,11 +61,11 @@ module slider_holes (n = 4)
         }
     }
     
-    translate ([-key_area_width/2 - pcb_hole_size/2 - .07, 0, 0])
+    translate ([-key_area_width/2 - pcb_hole_size/2 - .15, 0, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
-    translate ([key_area_width/2 + pcb_hole_size/2 + .07, 0, 0])
+    translate ([key_area_width/2 + pcb_hole_size/2 + .15, 0, 0])
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
@@ -131,17 +133,17 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, spacing = 0, top_bottom_border = key_top_bottom_padding)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, sep_width = key_separator_width, spacing = 0, top_bottom_border = key_top_bottom_padding)
 {
     key_count = 16;
     sep_count = 17;
-    key_width = (width - sep_count * key_separator_width) / key_count;
+    key_width = (width - sep_count * sep_width) / key_count;
     
     color("blue", 1.0)
     linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (key_separator_width + key_width + spacing*2) * i + key_separator_width, -height/2])
+        translate ([-width/2 + (sep_width + key_width + spacing*2) * i + sep_width, -height/2])
         {
             square([key_width, height]);
         }
@@ -151,9 +153,9 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     linear_extrude (height = thickness)
     for (i=[0:sep_count-1])
     {
-        translate ([-width/2 + (key_separator_width + key_width + spacing*2) * i - spacing, -height/2])
+        translate ([-width/2 + (sep_width + key_width + spacing*2) * i - spacing, -height/2])
         {
-            square([key_separator_width, height]);
+            square([sep_width, height]);
         }
     }
     color("green", 1.0)
@@ -333,7 +335,7 @@ module microusb_port(thickness = 26 + wall_thickness)
 module switch_hole(thickness = 6.5 + wall_thickness)
 {
     screw_distance = 15;
-    screw_size = 2.2;
+    screw_size = 2.1;
     
     color ("red", 1)
     linear_extrude (height = thickness)
@@ -362,8 +364,8 @@ module tact_hole(depth = 7, retainer_thickness = 3)
 {
     hole_size = 3.8;
     box_size = 6;
-    retainer_hole_size = 2.2;
-    retainer_hole_gap = (4-retainer_hole_size)/2;
+    retainer_hole_size = 2.1;
+    retainer_hole_gap = (4-retainer_hole_size-0.1)/2;
     
     color ("red", 1)
     linear_extrude (height = depth)
@@ -510,7 +512,7 @@ module slider_3d()
 
 module slider_2d()
 {
-    slider_keys(spacing = 0.5, top_bottom_border = key_thickness - 0.5);
+    slider_keys (width = key_area_width + key_kerf_adjust*(16+17), height = key_area_height + key_kerf_adjust, sep_width = key_separator_width + key_kerf_adjust, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
     translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + 2, top_thickness])
     {
         difference () // top
@@ -529,7 +531,7 @@ module slider_2d()
             }
         }
     }
-    translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + slider_height + 4, -wall_height])
+    translate ([0, key_area_height/2 + key_kerf_adjust/2 + slider_height/2 - slider_y_adjust + key_thickness + slider_height + 4, -wall_height])
     {
         difference () // bottom
         {
@@ -555,7 +557,7 @@ module slider_2d()
             }
         }
     }
-    translate ([0, -key_area_height/2 - full_height*2 - key_thickness - 5, slider_height/2 - slider_y_adjust - wall_thickness - 2])
+    translate ([0, -key_area_height/2 - key_kerf_adjust/2 - full_height*2 - key_thickness - 5, slider_height/2 - slider_y_adjust - wall_thickness - 2])
     {
         rotate([90, 0, 0])
         {
