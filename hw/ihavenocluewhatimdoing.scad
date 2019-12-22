@@ -21,7 +21,7 @@ full_height = top_thickness + wall_height + bottom_thickness;
 
 slider_height = 136;
 top_width = 470;
-bottom_width = 530;
+bottom_width = 470;
 slider_y_adjust = -9.5;
 
 key_separator_width = 3;
@@ -384,6 +384,12 @@ module tact_hole(depth = 7, retainer_thickness = 3)
     }
 }
 
+module rubber_foot(size = 10, thickness = 3)
+{
+    color ("black", 1)
+    cylinder(thickness, size/2, size/2 * 0.8);
+}
+
 module slider_3d()
 {
     slider_keys();
@@ -412,6 +418,23 @@ module slider_3d()
         {
             color ("black", 0.4)
             slider_cover(bottom_width, thickness = bottom_thickness);
+            
+            translate ([-bottom_width/2 + 36, -slider_height/2 + slider_y_adjust + 16, bottom_thickness])
+            {
+                rubber_foot();
+            }
+            translate ([bottom_width/2 - 36, -slider_height/2 + slider_y_adjust + 16, bottom_thickness])
+            {
+                rubber_foot();
+            }
+            translate ([-bottom_width/2 + 36, slider_height/2 + slider_y_adjust - 16, bottom_thickness])
+            {
+                rubber_foot();
+            }
+            translate ([bottom_width/2 - 36, slider_height/2 + slider_y_adjust - 16, bottom_thickness])
+            {
+                rubber_foot();
+            }
         }
         translate ([0, slider_y_adjust + wall_thickness, wall_height - 1])
         {
