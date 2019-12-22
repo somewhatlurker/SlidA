@@ -25,7 +25,7 @@ bottom_width = 530;
 slider_y_adjust = -9.5;
 
 key_separator_width = 3;
-key_top_bottom_padding = 1.5;
+key_top_bottom_padding = top_thickness;
 key_area_width = pcb_width_main * 4 + key_separator_width;
 key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top_bottom_padding*2 - .15;
 
@@ -131,7 +131,7 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, spacing = 0, top_bottom_border = 1.5)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, spacing = 0, top_bottom_border = key_top_bottom_padding)
 {
     key_count = 16;
     sep_count = 17;
@@ -466,29 +466,29 @@ module slider_3d()
     {
         rotate ([90, 0, 0])
         {
-            //microusb_port();
+            microusb_port();
         }
     }
     translate ([-75, -slider_height/2 + slider_y_adjust - wall_thickness + 13.5, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
-            //switch_hole();
+            switch_hole();
         }
     }
     translate ([-100, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
     {
         rotate ([90, 0, 0])
         {
-            //tact_hole();
+            tact_hole();
         }
     }
 }
 
 module slider_2d()
 {
-    slider_keys(spacing = 0.5, top_bottom_border = 2.5);
-    translate ([0, 125, top_thickness])
+    slider_keys(spacing = 0.5, top_bottom_border = key_thickness - 0.5);
+    translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + 2, top_thickness])
     {
         difference () // top
         {
@@ -506,7 +506,7 @@ module slider_2d()
             }
         }
     }
-    translate ([0, 265, -wall_height])
+    translate ([0, key_area_height/2 + slider_height/2 - slider_y_adjust + key_thickness + slider_height + 4, -wall_height])
     {
         difference () // bottom
         {
@@ -532,7 +532,7 @@ module slider_2d()
             }
         }
     }
-    translate ([0, -85, slider_height/2 - slider_y_adjust - wall_thickness - 2])
+    translate ([0, -key_area_height/2 - full_height*2 - key_thickness - 5, slider_height/2 - slider_y_adjust - wall_thickness - 2])
     {
         rotate([90, 0, 0])
         {
