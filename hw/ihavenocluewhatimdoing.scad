@@ -31,6 +31,8 @@ key_area_height = pcb_height_total - pcb_hole_dist_y*2 - pcb_hole_size - key_top
 
 tab_tolerance = 0.1;
 
+hole_resolution = 50;
+
 
 module slider_holes (n = 4)
 {
@@ -40,30 +42,30 @@ module slider_holes (n = 4)
         {
             translate ([pcb_hole_dist_x, pcb_hole_dist_y, 0])
             {
-                circle(pcb_hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=hole_resolution);
             }
             translate ([pcb_width_main - pcb_hole_dist_x, pcb_hole_dist_y, 0])
             {
-                circle(pcb_hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=hole_resolution);
             }
             translate ([pcb_hole_dist_x, pcb_height_total - pcb_hole_dist_y, 0])
             {
-                circle(pcb_hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=hole_resolution);
             }
             translate ([pcb_width_main - pcb_hole_dist_x, pcb_height_total - pcb_hole_dist_y, 0])
             {
-                circle(pcb_hole_size/2, $fn=32);
+                circle(pcb_hole_size/2, $fn=hole_resolution);
             }
         }
     }
     
     translate ([-key_area_width/2 - pcb_hole_size/2 - .07, 0, 0])
     {
-        circle(pcb_hole_size/2, $fn=32);
+        circle(pcb_hole_size/2, $fn=hole_resolution);
     }
     translate ([key_area_width/2 + pcb_hole_size/2 + .07, 0, 0])
     {
-        circle(pcb_hole_size/2, $fn=32);
+        circle(pcb_hole_size/2, $fn=hole_resolution);
     }
 }
 
@@ -95,11 +97,11 @@ module slider_pcbs (n = 4)
                     // main body corners
                     translate ([corner_rad, pcb_height_total - corner_rad])
                     {
-                        circle(r = corner_rad, $fn=32);
+                        circle(r = corner_rad, $fn=hole_resolution);
                     }
                     translate ([pcb_width_main - corner_rad, pcb_height_total - corner_rad])
                     {
-                        circle(r = corner_rad, $fn=32);
+                        circle(r = corner_rad, $fn=hole_resolution);
                     }
                     
                     // led section full width (not full height)
@@ -116,11 +118,11 @@ module slider_pcbs (n = 4)
                     // led section corners
                     translate ([pcb_width_ledsoffset + corner_rad, corner_rad])
                     {
-                        circle(r = corner_rad, $fn=32);
+                        circle(r = corner_rad, $fn=hole_resolution);
                     }
                     translate ([pcb_width_ledsoffset + pcb_width_main - corner_rad, corner_rad])
                     {
-                        circle(r = corner_rad, $fn=32);
+                        circle(r = corner_rad, $fn=hole_resolution);
                     }
                 }
             }
@@ -197,19 +199,19 @@ module slider_cover(width = top_width, height = slider_height, thickness = top_t
         
         translate ([-extra_hole_x1, y_offset - height/2 + extra_hole_margin_y])
         {
-            circle(r = extra_hole_size/2, $fn=32);
+            circle(r = extra_hole_size/2, $fn=hole_resolution);
         }
         translate ([-extra_hole_x2, y_offset - height/2 + extra_hole_margin_y])
         {
-            circle(r = extra_hole_size/2, $fn=32);
+            circle(r = extra_hole_size/2, $fn=hole_resolution);
         }
         translate ([extra_hole_x2, y_offset - height/2 + extra_hole_margin_y])
         {
-            circle(r = extra_hole_size/2, $fn=32);
+            circle(r = extra_hole_size/2, $fn=hole_resolution);
         }
         translate ([extra_hole_x1, y_offset - height/2 + extra_hole_margin_y])
         {
-            circle(r = extra_hole_size/2, $fn=32);
+            circle(r = extra_hole_size/2, $fn=hole_resolution);
         }
     }
 }
@@ -311,11 +313,11 @@ module microusb_port(thickness = 26 + wall_thickness)
     {
         translate ([-screw_distance/2, 0])
         {
-            circle(r = screw_size/2, $fn=32);
+            circle(r = screw_size/2, $fn=hole_resolution);
         }
         translate ([screw_distance/2, 0])
         {
-            circle(r = screw_size/2, $fn=32);
+            circle(r = screw_size/2, $fn=hole_resolution);
         }
         square([10.6, 8.5], center=true);
     }
@@ -324,7 +326,7 @@ module microusb_port(thickness = 26 + wall_thickness)
     translate ([0, 0, -5])
     {
         linear_extrude (height = thickness)
-        circle(r = 5/2, $fn=32);
+        circle(r = 5/2, $fn=hole_resolution);
     }
 }
 
@@ -339,11 +341,11 @@ module switch_hole(thickness = 6.5 + wall_thickness)
     {
         translate ([-screw_distance/2, 0])
         {
-            circle(r = screw_size/2, $fn=32);
+            circle(r = screw_size/2, $fn=hole_resolution);
         }
         translate ([screw_distance/2, 0])
         {
-            circle(r = screw_size/2, $fn=32);
+            circle(r = screw_size/2, $fn=hole_resolution);
         }
         square([8, 4], center=true);
     }
@@ -352,7 +354,7 @@ module switch_hole(thickness = 6.5 + wall_thickness)
     translate ([0, 0, -5])
     {
         linear_extrude (height = thickness)
-        circle(r = 7/2, $fn=32);
+        circle(r = 7/2, $fn=hole_resolution);
     }
 }
 
@@ -365,7 +367,7 @@ module tact_hole(depth = 7, retainer_thickness = 3)
     
     color ("red", 1)
     linear_extrude (height = depth)
-    circle(r = hole_size/2, $fn=32);
+    circle(r = hole_size/2, $fn=hole_resolution);
     
     color ("red", 1)
     linear_extrude (height = 3.5)
@@ -377,7 +379,7 @@ module tact_hole(depth = 7, retainer_thickness = 3)
         rotate ([-90, 0, 0])
         {
             linear_extrude (height = retainer_thickness + 0.1)
-            circle(r = retainer_hole_size/2, $fn=32);
+            circle(r = retainer_hole_size/2, $fn=hole_resolution);
         }
     }
 }
@@ -395,11 +397,11 @@ module slider_3d()
         {
             slider_cover();
         }
-        translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
+        translate ([0, slider_y_adjust + wall_thickness, 1])
         {
             minkowski()
             {
-                box_walls(tabs_top = top_thickness + 2);
+                box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0);
                 cube(tab_tolerance*2, center = true);
             }
         }
@@ -411,11 +413,11 @@ module slider_3d()
             color ("black", 0.4)
             slider_cover(bottom_width, thickness = bottom_thickness);
         }
-        translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
+        translate ([0, slider_y_adjust + wall_thickness, wall_height - 1])
         {
             minkowski()
             {
-                box_walls(tabs_bottom = bottom_thickness + 2);
+                box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2);
                 cube(tab_tolerance*2, center = true);
             }
         }
@@ -494,11 +496,11 @@ module slider_2d()
             {
                 slider_cover();
             }
-            translate ([0, slider_y_adjust + wall_thickness, wall_height/2 + 1])
+            translate ([0, slider_y_adjust + wall_thickness, 1])
             {
                 minkowski()
                 {
-                    box_walls(tabs_top = top_thickness + 2);
+                    box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0);
                     cube(tab_tolerance*2, center = true);
                 }
             }
@@ -513,11 +515,11 @@ module slider_2d()
                 color ("black", 0.4)
                 slider_cover(bottom_width, thickness = bottom_thickness);
             }
-            translate ([0, slider_y_adjust + wall_thickness, wall_height/2 - 1])
+            translate ([0, slider_y_adjust + wall_thickness, wall_height - 1])
             {
                 minkowski()
                 {
-                    box_walls(tabs_bottom = bottom_thickness + 2);
+                    box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2);
                     cube(tab_tolerance*2, center = true);
                 }
             }
