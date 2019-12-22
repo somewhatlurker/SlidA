@@ -540,7 +540,7 @@ module slider_2d_top()
     
     translate ([0, - slider_height/2 + slider_y_adjust - key_thickness - 2, 0])
     {
-        slider_keys (kerf_adj = -key_area_height, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
+        slider_keys (height = 0, spacing = 0.4, top_bottom_border = key_thickness - 0.3);
     }
 }
 
