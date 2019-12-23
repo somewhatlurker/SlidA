@@ -324,11 +324,11 @@ module box_walls_flat(width = top_width - 53, depth = slider_height - 7, height 
         {
             wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
         }
-        translate ([0, -depth/2, -height_off])
+        translate ([-width/2 + (depth-thickness*2)/2, -depth/2, -height_off])
         {
             wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
         }
-        translate ([0, -depth/2, -height_off*2])
+        translate ([-width/2 + (depth-thickness*2) * 1.5 + 1, -depth/2, -height_off])
         {
             wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
         }
@@ -658,7 +658,7 @@ module slider_2d_full()
         slider_2d_bottom();
     }
     
-    translate ([0, -key_area_height/2 - key_kerf_adjust/2 - full_height*2 - key_thickness - 7, 0])
+    translate ([0, -key_area_height/2 - key_kerf_adjust/2 - full_height*1 - key_thickness - 7, 0])
     {
         slider_2d_walls();
     }
