@@ -32,6 +32,12 @@
 #include <Arduino.h>
 #include "mpr121.h"
 
+byte mpr121::i2cReadBuf[MPR121_I2C_BUFLEN];
+bool mpr121::electrodeTouchBuf[13];
+bool mpr121::electrodeOORBuf[15];
+short mpr121::electrodeDataBuf[13];
+byte mpr121::electrodeBaselineBuf[13];
+
 // write a value to an MPR121 register
 void mpr121::writeRegister(mpr121Register addr, byte value) {
   i2cWire->beginTransmission(i2cAddr);
