@@ -33,14 +33,15 @@ enum sliderCommand {
   SLIDER_LED = 0x02, // set led colours -- 1 byte (0-63?) brightness, followed by BRG data
   SLIDER_SCAN_ON = 0x03, // enable auto scan
   SLIDER_SCAN_OFF = 0x04, // disable auto scan
-  SLIDER_UNKNOWN_06 = 0x06, // looks a lot like 0B (with double length maybe??), so probably related to that
-  SLIDER_UNKNOWN_09 = 0x09, // segatools says this is something about diva LEDs, but those are 0x02 like chuni
-  SLIDER_UNKNOWN_0A = 0x0A,
-  SLIDER_UNKNOWN_0B = 0x0B, // maybe related to calibration, doesn't really matter
+  SLIDER_REPORT_06 = 0x06, // some kind of report, looks a lot like 0B (with double length maybe??), so probably related to that (maybe diva only, seems unused)
+  SLIDER_SCAN_07 = 0x07, // seems to be some kind of scan command related to the 06 report (maybe diva only, seems unused)
+  SLIDER_UNKNOWN_09 = 0x09, // set some kind of parameter?? segatools says this is something about diva LEDs, but those are 0x02 like chuni (maybe diva only)
+  SLIDER_UNKNOWN_0A = 0x0A, // set some kind of parameter?? (maybe diva only)
+  SLIDER_REPORT_0B = 0x0B, // some kind of report, maybe related to calibration, doesn't really matter (maybe diva only, seems unused)
+  SLIDER_SCAN_0C = 0x0C, // seems to be some kind of scan command related to the 0b report (maybe diva only, seems unused)
   SLIDER_DETECT = 0x10, // segatools calls this reset, but doesn't seem to actually reset anything in segatools
   SLIDER_EXCEPTION = 0xEE, // unimportant, but no reason not to include this
   SLIDER_BOARDINFO = 0xF0 // get slider board model, version, etc -- use boardInfo struct
-  // 0x7 and 0xC are possibly allowed to be sent to slider, but I'm not sure...
 };
 
 // holds all data for a given data packet
