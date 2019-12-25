@@ -38,11 +38,22 @@ enum sliderCommand {
   SLIDER_CALIBRATION = 0x0B, // just a guess, doesn't really matter
   SLIDER_DETECT = 0x10, // segatools calls this reset, but doesn't seem to actually reset anything in segatools
   SLIDER_EXCEPTION = 0xEE, // unimportant, but no reason not to include this
-  SLIDER_BOARDINFO = 0xF0 // get slider board model, version, etc -- 8 byte model number (string with spaces for padding), 1 byte device class, 5 byte chip part number (string), 1 byte unknown, 1 byte fw version, 2 bytes unknown
+  SLIDER_BOARDINFO = 0xF0 // get slider board model, version, etc -- use boardInfo struct
 };
 
 // holds all data for a given data packet
 struct sliderPacket { sliderCommand Command; const byte* Data; byte DataLength; bool IsValid; };
+
+// define a struct for board info because it isn't just a simple array like other data
+struct __attribute__((packed)) boardInfo { // packed should be safe because all members are one byte long data types
+  char model[8]; // board model number (837-XXXXX), with spaces after for padding
+  byte deviceClass = 0xa0; // aparrently this probably identifies the device class, but it's not known -- should be 0xa0 for slider
+  char chipNumber[5]; // chip part number
+  byte unk_0e = 0xff; // unknown purpose -- seems to just be 0xff
+  byte fwVer = 0x90; // device firmware version...  both chuni and diva use 144 so maybe it's actually related to protocol version
+  byte unk_10 = 0x00; // unknown purpose -- seems to just be 0x00
+  byte unk_11 = 0x64; // unknown purpose -- seems to just be 0x64
+};
 
 class segaSlider {
 private:

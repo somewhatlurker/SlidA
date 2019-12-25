@@ -77,12 +77,13 @@ sliderPacket scanPacket = { SLIDER_SCAN_REPORT, sliderBuf, 32, true };
 byte emptyBytes[0];
 sliderPacket emptyPacket = { (sliderCommand)0, emptyBytes, 0, true }; // command will be replaced as necessary
 
-// 8 byte model number (string with spaces for padding), 1 byte device class, 5 byte chip part number (string), 1 byte unknown, 1 byte fw version, 2 bytes unknown
-// board "15275   ", class 0x0a, chip "06687", 0xff, ver 144, 0x00, 0x64
-byte boardInfoDataDiva[18] = {0x31, 0x35, 0x32, 0x37, 0x35, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x36, 0x38, 0x37, 0xFF, 0x90, 0x00, 0x64};
-// board "15330   ", class 0x0a, chip "06712", 0xff, ver 144, 0x00, 0x64
-byte boardInfoDataChuni[18] = {0x31, 0x35, 0x33, 0x33, 0x30, 0x20, 0x20, 0x20, 0xa0, 0x30, 0x36, 0x37, 0x31, 0x32, 0xFF, 0x90, 0x00, 0x64};
-sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, boardInfoDataChuni, 18, true };
+
+const char BOARD_MODEL_DIVA[sizeof(boardInfo::model)] = { '1', '5', '2', '7', '5', ' ', ' ', ' ' };
+const char BOARD_CHIP_DIVA[sizeof(boardInfo::chipNumber)] = { '0', '6', '6', '8', '7' };
+const char BOARD_MODEL_CHUNI[sizeof(boardInfo::model)] = { '1', '5', '3', '3', '0', ' ', ' ', ' ' };
+const char BOARD_CHIP_CHUNI[sizeof(boardInfo::chipNumber)] = { '0', '6', '7', '1', '2' };
+boardInfo boardInfoData;
+sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, (byte*)&boardInfoData, sizeof(boardInfo), true };
 
 
 // mpr121s
@@ -187,10 +188,12 @@ void loop() {
         case SLIDER_BOARDINFO:
           switch(curSliderMode) {
             case SLIDER_TYPE_DIVA:
-              boardinfoPacket.Data = boardInfoDataDiva;
+              memcpy(boardInfoData.model, BOARD_MODEL_DIVA, sizeof(boardInfo::model));
+              memcpy(boardInfoData.chipNumber, BOARD_CHIP_DIVA, sizeof(boardInfo::chipNumber));
               break;
             default:
-              boardinfoPacket.Data = boardInfoDataChuni;
+              memcpy(boardInfoData.model, BOARD_MODEL_CHUNI, sizeof(boardInfo::model));
+              memcpy(boardInfoData.chipNumber, BOARD_CHIP_CHUNI, sizeof(boardInfo::chipNumber));
               break;
           }
           sliderProtocol.sendSliderPacket(boardinfoPacket);
