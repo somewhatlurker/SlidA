@@ -127,6 +127,7 @@ void setup() {
 
 bool scanOn = false;
 
+// enable or disable slider and air scanning
 void setScanning(bool on_off) {
   if (on_off) {
     scanOn = true;
@@ -146,9 +147,60 @@ void setScanning(bool on_off) {
   }
 }
 
+int curSliderPatternByte;
+
+// perform a slider scan and send it to sliderProtocol
+void doSliderScan() {
+  //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
+  curSliderPatternByte = (millis()/30) % 32;
+  sliderBuf[curSliderPatternByte] = 0xC0;
+
+  /*
+  // clear the output buffer
+  memset(sliderBuf, 0, sizeof(sliderBuf));
+
+  static const int numInputTouches = 12 * NUM_MPRS;
+  static bool allTouches[numInputTouches];
+
+  // read all mpr touches into allTouches
+  for (int i = 0; i < NUM_MPRS; i++) {
+    mpr121 &mpr = mprs[i];
+    bool* touches = mpr.readTouchState();
+    memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+  }
+
+  // apply touch data to output buffer
+  for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+    for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+      int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+
+      if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+        sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+      }
+    }
+  }
+  */
+  
+  sliderProtocol.sendSliderPacket(scanPacket);
+  
+  sliderBuf[curSliderPatternByte] = 0x00;
+}
+
+// perform an air sensor scan and send it to Keyboard
+void doAirScan() {
+  /*
+  static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
+  Keyboard.releaseAll();
+
+  for (int i = 0; i < 6; i++) {
+    if (airTower.checkLevel(i))
+       Keyboard.press(airKeys[i]);
+  }
+  */
+}
+
 
 // vars used in main loop
-int curSliderPatternByte;
 int sleepTime = LOOP_SLEEP_US;
 unsigned long lastSliderSendMillis;
 unsigned long lastSerialRecvMillis = -5000;
@@ -198,6 +250,17 @@ void loop() {
           }
           sliderProtocol.sendSliderPacket(boardinfoPacket);
           break;
+
+        case SLIDER_SCAN_REPORT:
+          // there's no way this will give accurate results,
+          // but at least it's implemented on a protocol level now
+          if (!scanOn) {
+            setScanning(true);
+            delay(10);
+            doSliderScan();
+            setScanning(false);
+          }
+          break; // doSliderScan() sends the response
           
         case SLIDER_SCAN_ON:
           setScanning(true);
@@ -283,55 +346,14 @@ void loop() {
     // if slider touch state has changed (interrupt was triggered), send data
     // also send as a keep alive if slider touch state hasn't changed recently
     if ( (digitalRead(PIN_SLIDER_IRQ) == LOW) || ((millis() - lastSliderSendMillis) > 250) ) {
-      //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
-      curSliderPatternByte = (millis()/30) % 32;
-      sliderBuf[curSliderPatternByte] = 0xC0;
-  
-      /*
-      // clear the output buffer
-      memset(sliderBuf, 0, sizeof(sliderBuf));
-  
-      static const int numInputTouches = 12 * NUM_MPRS;
-      static bool allTouches[numInputTouches];
-  
-      // read all mpr touches into allTouches
-      for (int i = 0; i < NUM_MPRS; i++) {
-        mpr121 &mpr = mprs[i];
-        bool* touches = mpr.readTouchState();
-        memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
-      }
-  
-      // apply touch data to output buffer
-      for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-        for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
-          int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
-    
-          if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
-            sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
-          }
-        }
-      }
-      */
-      
-      sliderProtocol.sendSliderPacket(scanPacket);
-      
-      sliderBuf[curSliderPatternByte] = 0x00;
-      
+      doSliderScan();
       lastSliderSendMillis = millis();
     }
 
 
     // if air should be updated this loop, update it
     if (loopCount % AIR_UPDATE_DUTY == 0) {
-      /*
-      static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
-      Keyboard.releaseAll();
-
-      for (int i = 0; i < 6; i++) {
-        if (airTower.checkLevel(i))
-           Keyboard.press(airKeys[i]);
-      }
-      */
+      doAirScan();
     }
   }
 
