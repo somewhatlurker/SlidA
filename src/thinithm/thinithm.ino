@@ -7,6 +7,11 @@
 #include <Keyboard.h>
 
 
+// disable input scanning and generate fake slider data instead
+// (useful for testing protocol without full hardware)
+#define FAKE_DATA true
+
+
 // sleep for x microseconds after running the main loop
 #define LOOP_SLEEP_US 1000
 
@@ -107,13 +112,15 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
 
 
-  delay(10); // make sure MPR121s have booted
-  //Wire.begin();
-  //Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
-  //for (mpr121 &mpr : mprs) {
-  //  mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
-  //  mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
-  //}
+  #if !FAKE_DATA
+    delay(10); // make sure MPR121s have booted
+    Wire.begin();
+    Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
+    for (mpr121 &mpr : mprs) {
+      mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
+      mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
+    }
+  #endif // !FAKE_DATA
 
 
   // SK6812 should be WS2812(B) compatible, but FastLED has it natively anyway
@@ -132,72 +139,80 @@ bool scanOn = false;
 void setScanning(bool on_off) {
   if (on_off) {
     scanOn = true;
-    //for (mpr121 &mpr : mprs) {
-    //  mpr.startMPR(12);
-    //}
-    //airTower.calibrate();
-    Keyboard.begin();
+    #if !FAKE_DATA
+      for (mpr121 &mpr : mprs) {
+        mpr.startMPR(12);
+      }
+      airTower.calibrate();
+      Keyboard.begin();
+    #endif // !FAKE_DATA
   }
   else {
     scanOn = false;
-    //for (mpr121 &mpr : mprs) {
-    //  mpr.stopMPR();
-    //}
-    Keyboard.releaseAll();
-    Keyboard.end();
+    #if !FAKE_DATA
+      for (mpr121 &mpr : mprs) {
+        mpr.stopMPR();
+      }
+      Keyboard.releaseAll();
+      Keyboard.end();
+    #endif // !FAKE_DATA
   }
 }
 
-int curSliderPatternByte;
+#if FAKE_DATA
+  int curSliderPatternByte; // used for fake test data
+#endif
 
 // perform a slider scan and send it to sliderProtocol
 void doSliderScan() {
-  //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
-  curSliderPatternByte = (millis()/30) % 32;
-  sliderBuf[curSliderPatternByte] = 0xC0;
-
-  /*
   // clear the output buffer
   memset(sliderBuf, 0, sizeof(sliderBuf));
-
-  static const int numInputTouches = 12 * NUM_MPRS;
-  static bool allTouches[numInputTouches];
-
-  // read all mpr touches into allTouches
-  for (int i = 0; i < NUM_MPRS; i++) {
-    mpr121 &mpr = mprs[i];
-    bool* touches = mpr.readTouchState();
-    memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
-  }
-
-  // apply touch data to output buffer
-  for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-    for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
-      int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
-
-      if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
-        sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+  
+  #if FAKE_DATA
+    //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
+    curSliderPatternByte = (millis()/30) % 32;
+    sliderBuf[curSliderPatternByte] = 0xC0;
+  #else // FAKE_DATA
+    static const int numInputTouches = 12 * NUM_MPRS;
+    static bool allTouches[numInputTouches];
+  
+    // read all mpr touches into allTouches
+    for (int i = 0; i < NUM_MPRS; i++) {
+      mpr121 &mpr = mprs[i];
+      bool* touches = mpr.readTouchState();
+      memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+    }
+  
+    // apply touch data to output buffer
+    for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+      for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+        int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+  
+        if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+          sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+        }
       }
     }
-  }
-  */
+  #endif // FAKE_DATA
   
   sliderProtocol.sendSliderPacket(scanPacket);
-  
-  sliderBuf[curSliderPatternByte] = 0x00;
+
+  #if FAKE_DATA
+    sliderBuf[curSliderPatternByte] = 0x00;
+  #endif
 }
 
 // perform an air sensor scan and send it to Keyboard
 void doAirScan() {
-  /*
-  static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
-  Keyboard.releaseAll();
-
-  for (int i = 0; i < 6; i++) {
-    if (airTower.checkLevel(i))
-       Keyboard.press(airKeys[i]);
-  }
-  */
+  #if !FAKE_DATA
+    static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
+    Keyboard.releaseAll();
+  
+    for (int i = 0; i < 6; i++) {
+      if (airTower.checkLevel(i))
+         Keyboard.press(airKeys[i]);
+    }
+  #endif // !FAKE_DATA
 }
 
 
