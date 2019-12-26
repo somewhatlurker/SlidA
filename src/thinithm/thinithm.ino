@@ -122,6 +122,7 @@ void setup() {
 
   Serial.setTimeout(0.01);
   Serial.begin(115200);
+  while(!Serial) {} // wait for serial to be ready on USB boards
 }
 
 
