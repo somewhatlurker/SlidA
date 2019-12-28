@@ -72,7 +72,8 @@ segaSlider sliderProtocol = segaSlider(&Serial);
 
 
 // slider board type for remapping
-sliderBoardType curSliderMode;
+sliderBoardType curSliderMode = SLIDER_TYPE_DIVA;
+sliderDef* curSliderDef = allSliderDefs[curSliderMode];
 
 
 // slider protocol packets for reuse
@@ -184,9 +185,9 @@ void doSliderScan() {
     }
   
     // apply touch data to output buffer
-    for (int i = 0; i < allSliderDefs[curSliderMode]->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+    for (int i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
       for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
-        int inputPos = allSliderDefs[curSliderMode]->keyMap[i][j];
+        int inputPos = curSliderDef->keyMap[i][j];
   
         if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
           sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
@@ -227,6 +228,7 @@ void loop() {
   curError = ERRORSTATE_NONE;
 
   //curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
+  curSliderDef = allSliderDefs[curSliderMode];
 
 
   // check for new slider data
@@ -294,8 +296,8 @@ void loop() {
 
             int maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
             
-            for (int i = 0; i < allSliderDefs[curSliderMode]->ledCount; i++) {
-              int outputLed = allSliderDefs[curSliderMode]->ledMap[i];
+            for (int i = 0; i < curSliderDef->ledCount; i++) {
+              int outputLed = curSliderDef->ledMap[i];
 
               if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
                 if (i < maxPacketLeds) {
@@ -366,10 +368,11 @@ void loop() {
       lastSliderSendMillis = millis();
     }
 
-
-    // if air should be updated this loop, update it
-    if (loopCount % AIR_UPDATE_DUTY == 0) {
-      doAirScan();
+    if (curSliderDef->hasAir) {
+      // if air should be updated this loop, update it
+      if (loopCount % AIR_UPDATE_DUTY == 0) {
+        doAirScan();
+      }
     }
   }
 
