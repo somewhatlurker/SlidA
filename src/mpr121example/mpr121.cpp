@@ -382,9 +382,10 @@ short* mpr121::readElectrodeData(byte electrode, byte count) {
   if (electrode + count > 13)
     count = 13 - electrode;
 
+  byte* rawdata = readRegister((mpr121Register)(0x04 + electrode*2), count*2);
+
   for (int i = 0; i < count; i++) {
-    byte* rawdata = readRegister((mpr121Register)(0x04 + (i+electrode)*2), 2);
-    electrodeDataBuf[i] = rawdata[0] | ((rawdata[1] & 0b00000011) << 8);
+    electrodeDataBuf[i] = rawdata[i*2] | ((rawdata[i*2 + 1] & 0b00000011) << 8);
   }
 
   return electrodeDataBuf;
@@ -398,8 +399,10 @@ byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
   if (electrode + count > 13)
     count = 13 - electrode;
 
+  byte* rawdata = readRegister((mpr121Register)(0x1e + electrode), count);
+
   for (int i = 0; i < count; i++) {
-    electrodeBaselineBuf[i] = readRegister((mpr121Register)(0x1e + (i+electrode)));
+    electrodeBaselineBuf[i] = rawdata[i];
   }
 
   return electrodeBaselineBuf;
