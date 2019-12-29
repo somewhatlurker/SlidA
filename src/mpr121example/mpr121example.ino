@@ -31,8 +31,10 @@ void loop() {
     if (ANALOG_OUTPUT) {
       short* values = mpr.readElectrodeData(0, numElectrodes); // read all electrodes, starting from electrode 0
       for (int j = 0; j < numElectrodes; j++)
+      {
         Serial.print(values[j]);
         Serial.print(" ");
+      }
     }
     else {
       bool* touches = mpr.readTouchState();
