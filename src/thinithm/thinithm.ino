@@ -19,6 +19,9 @@
 // (air is less sensitive to timing so can be updated less often if necessary)
 #define AIR_UPDATE_DUTY 1
 
+// time to wait after losing serial connection before disabling scan and LEDs
+#define SERIAL_TIMEOUT_MS 10000
+
 
 // slider LED vars
 #define NUM_SLIDER_LEDS 32
@@ -292,7 +295,7 @@ void loop() {
           
         case SLIDER_LED:
           if (pkt.DataLength > 0) {
-            FastLED.setBrightness(pkt.Data[0] * RGB_BRIGHTNESS / 63); // this seems to max out at 0x3f (63), use that for division
+            FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
 
             int maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
             
@@ -322,7 +325,7 @@ void loop() {
   }
 
   // disable scan and set error if serial is dead
-  if ((millis() - lastSerialRecvMillis) > 5000) {
+  if ((millis() - lastSerialRecvMillis) > SERIAL_TIMEOUT_MS) {
     if (scanOn) {
       setScanning(false);
     }
@@ -331,7 +334,7 @@ void loop() {
     
     // set mode colour for 5s (this should trigger at boot)
     // also use this to black out slider
-    if ((millis() - lastSerialRecvMillis) < 10000) {
+    if ((millis() - lastSerialRecvMillis) < SERIAL_TIMEOUT_MS + 5000) {
       FastLED.setBrightness(RGB_BRIGHTNESS);
 
       for (int i = 0; i < NUM_SLIDER_LEDS; i++) {
