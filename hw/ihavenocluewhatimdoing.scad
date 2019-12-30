@@ -207,7 +207,7 @@ module slider_cover(width = top_width, height = slider_height, thickness = top_t
     bevel_y = 52;
     y_offset = slider_y_adjust;
     
-    extra_hole_size = 3.3;
+    extra_hole_size = pcb_hole_size + 0.1;
     //extra_hole_x1 = pcb_width_main * 1.5;
     //extra_hole_x2 = pcb_width_main * 0.5;
     extra_hole_x1 = pcb_width_main * 1;
@@ -338,7 +338,7 @@ module box_walls_flat(width = top_width - 53, depth = slider_height - 7, height 
 module microusb_port(thickness = 26 + wall_thickness)
 {
     screw_distance = 28;
-    screw_size = 3;
+    screw_size = 3.1;
     
     color ("red", 1)
     linear_extrude (height = thickness)
