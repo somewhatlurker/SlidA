@@ -20,6 +20,7 @@
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
  *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
+ *   (electrodeTouchBuf returned by readTouchState is excepted)
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
  *   
@@ -33,7 +34,6 @@
 #include "mpr121.h"
 
 byte mpr121::i2cReadBuf[MPR121_I2C_BUFLEN];
-bool mpr121::electrodeTouchBuf[13];
 bool mpr121::electrodeOORBuf[15];
 short mpr121::electrodeDataBuf[13];
 byte mpr121::electrodeBaselineBuf[13];
