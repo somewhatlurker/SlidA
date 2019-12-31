@@ -87,10 +87,6 @@ byte emptyBytes[0];
 sliderPacket emptyPacket = { (sliderCommand)0, emptyBytes, 0, true }; // command will be replaced as necessary
 
 
-const char BOARD_MODEL_DIVA[sizeof(boardInfo::model)] = { '1', '5', '2', '7', '5', ' ', ' ', ' ' };
-const char BOARD_CHIP_DIVA[sizeof(boardInfo::chipNumber)] = { '0', '6', '6', '8', '7' };
-const char BOARD_MODEL_CHUNI[sizeof(boardInfo::model)] = { '1', '5', '3', '3', '0', ' ', ' ', ' ' };
-const char BOARD_CHIP_CHUNI[sizeof(boardInfo::chipNumber)] = { '0', '6', '7', '1', '2' };
 boardInfo boardInfoData;
 sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, (byte*)&boardInfoData, sizeof(boardInfo), true };
 
@@ -259,16 +255,8 @@ void loop() {
       // handle the incoming packet because it was valid
       switch(pkt.Command) {
         case SLIDER_BOARDINFO:
-          switch(curSliderMode) {
-            case SLIDER_TYPE_DIVA:
-              memcpy(boardInfoData.model, BOARD_MODEL_DIVA, sizeof(boardInfo::model));
-              memcpy(boardInfoData.chipNumber, BOARD_CHIP_DIVA, sizeof(boardInfo::chipNumber));
-              break;
-            default:
-              memcpy(boardInfoData.model, BOARD_MODEL_CHUNI, sizeof(boardInfo::model));
-              memcpy(boardInfoData.chipNumber, BOARD_CHIP_CHUNI, sizeof(boardInfo::chipNumber));
-              break;
-          }
+          memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
+          memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
           sliderProtocol.sendSliderPacket(boardinfoPacket);
           break;
 
