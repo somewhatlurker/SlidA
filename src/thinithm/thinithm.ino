@@ -86,7 +86,6 @@ sliderPacket scanPacket = { SLIDER_SCAN_REPORT, sliderBuf, 32, true };
 byte emptyBytes[0];
 sliderPacket emptyPacket = { (sliderCommand)0, emptyBytes, 0, true }; // command will be replaced as necessary
 
-
 boardInfo boardInfoData;
 sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, (byte*)&boardInfoData, sizeof(boardInfo), true };
 
@@ -216,10 +215,10 @@ void doAirScan() {
 }
 
 
-// vars used in main loop
+// timing vars used in main loop
 int sleepTime = LOOP_SLEEP_US;
 unsigned long lastSliderSendMillis;
-unsigned long lastSerialRecvMillis = -5000;
+unsigned long lastSerialRecvMillis = -SERIAL_TIMEOUT_MS;
 unsigned long loopCount = 0;
 
 void loop() {
@@ -242,11 +241,12 @@ void loop() {
       
       if (!pkt.IsValid) {
         // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
+        // (so if `!=` it was probably a checksum issue)
         if (pkt.Command != (sliderCommand)0)
           curError |= ERRORSTATE_PACKET_CHECKSUM;
         
-        // break on all invalid packets as a precaution against the above check being wrong
-        // (should rarely trigger and it shouldn't matter if some data is lost)
+        // break on all invalid packets as a precaution against the above check being wrong and somehow detecting end of buffer
+        // (should rarely trigger anyway and it shouldn't matter if some data is lost)
         break;
       }
 
@@ -354,7 +354,7 @@ void loop() {
     
     // if slider touch state has changed (interrupt was triggered), send data
     // also send as a keep alive if slider touch state hasn't changed recently
-    if ( (digitalRead(PIN_SLIDER_IRQ) == LOW) || ((millis() - lastSliderSendMillis) > 250) ) {
+    if ( (digitalRead(PIN_SLIDER_IRQ) == LOW) || ((millis() - lastSliderSendMillis) > 500) ) {
       doSliderScan();
       lastSliderSendMillis = millis();
     }
