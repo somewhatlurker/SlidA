@@ -77,13 +77,59 @@ byte* mpr121::readRegister(mpr121Register addr, byte count) {
 }
 
 
-// set the touch and release thresholds for a subset of electrodes (AN3892)
-void mpr121::setElectrodeThresholds(byte electrode, byte count, byte touchThreshold, byte releaseThreshold) {
+// returns true if electrode num and count can be used or false if the function should immediately return
+// may modify electrode and/or count to keep them in bounds as necessay
+bool mpr121::checkElectrodeNum(byte &electrode, byte &count) {
   if (electrode > 12)
-    return;
+    return false;
 
   if (electrode + count > 13)
     count = 13 - electrode;
+
+  return true;
+}
+
+// returns true if electrode num can be used or false if the function should immediately return
+// may modify electrode to keep it in bounds as necessay
+bool mpr121::checkElectrodeNum(byte &electrode) {
+  if (electrode > 12)
+    return false;
+
+  return true;
+}
+
+// returns true if pin num and count can be used or false if the function should immediately return
+// may modify pin and/or count to keep them in bounds as necessay
+bool mpr121::checkGPIOPinNum(byte &pin, byte &count) {
+  if (pin > 12)
+    return false;
+  
+  if (pin < 4)
+    pin = 4;
+  
+  if (pin + count > 12)
+    count = 12 - pin;
+    
+  return true;
+}
+
+// returns true if pin num can be used or false if the function should immediately return
+// may modify pin to keep it in bounds as necessay
+bool mpr121::checkGPIOPinNum(byte &pin) {
+  if (pin > 12)
+    return false;
+  
+  if (pin < 4)
+    pin = 4;
+    
+  return true;
+}
+
+
+// set the touch and release thresholds for a subset of electrodes (AN3892)
+void mpr121::setElectrodeThresholds(byte electrode, byte count, byte touchThreshold, byte releaseThreshold) {
+  if (!checkElectrodeNum(electrode, count))
+    return;
 
   for (int i = 0; i < count; i++) {
     writeRegister((mpr121Register)(MPRREG_ELE0_TOUCH_THRESHOLD + (i+electrode)*2), touchThreshold);
@@ -317,9 +363,21 @@ mpr121::mpr121(byte addr, TwoWire *wire)
 }
 
 
+// read one touch state bool
+// also use this for reading GPIO inputs
+bool mpr121::readTouchState(byte electrode) {
+  if (!checkElectrodeNum(electrode))
+    return false;
+
+  byte rawdata = readRegister((mpr121Register)(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS + electrode/8));
+  
+  return bitRead(rawdata, electrode % 8);
+}
+
+
 #if MPR121_USE_BITFIELDS
   // read the 13 touch state bits
-    // also use this for reading GPIO inputs
+  // also use this for reading GPIO inputs
   short mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     return rawdata[0] | (rawdata[1] << 8);
@@ -335,26 +393,26 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   }
 #else // MPR121_USE_BITFIELDS
   // read the 13 touch state bools
-    // also use this for reading GPIO inputs
+  // also use this for reading GPIO inputs
   bool* mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     
-    electrodeTouchBuf[0] = (rawdata[0] & 0b00000001) != 0;
-    electrodeTouchBuf[1] = (rawdata[0] & 0b00000010) != 0;
-    electrodeTouchBuf[2] = (rawdata[0] & 0b00000100) != 0;
-    electrodeTouchBuf[3] = (rawdata[0] & 0b00001000) != 0;
-    electrodeTouchBuf[4] = (rawdata[0] & 0b00010000) != 0;
-    electrodeTouchBuf[5] = (rawdata[0] & 0b00100000) != 0;
-    electrodeTouchBuf[6] = (rawdata[0] & 0b01000000) != 0;
-    electrodeTouchBuf[7] = (rawdata[0] & 0b10000000) != 0;
+    electrodeTouchBuf[0] = bitRead(rawdata[0], 0);
+    electrodeTouchBuf[1] = bitRead(rawdata[0], 1);
+    electrodeTouchBuf[2] = bitRead(rawdata[0], 2);
+    electrodeTouchBuf[3] = bitRead(rawdata[0], 3);
+    electrodeTouchBuf[4] = bitRead(rawdata[0], 4);
+    electrodeTouchBuf[5] = bitRead(rawdata[0], 5);
+    electrodeTouchBuf[6] = bitRead(rawdata[0], 6);
+    electrodeTouchBuf[7] = bitRead(rawdata[0], 7);
     
-    electrodeTouchBuf[8] = (rawdata[1] & 0b00000001) != 0;
-    electrodeTouchBuf[9] = (rawdata[1] & 0b00000010) != 0;
-    electrodeTouchBuf[10] = (rawdata[1] & 0b00000100) != 0;
-    electrodeTouchBuf[11] = (rawdata[1] & 0b00001000) != 0;
-    electrodeTouchBuf[12] = (rawdata[1] & 0b00010000) != 0;
+    electrodeTouchBuf[8] = bitRead(rawdata[1], 0);
+    electrodeTouchBuf[9] = bitRead(rawdata[1], 1);
+    electrodeTouchBuf[10] = bitRead(rawdata[1], 2);
+    electrodeTouchBuf[11] = bitRead(rawdata[1], 3);
+    electrodeTouchBuf[12] = bitRead(rawdata[1], 4);
     
-    // electrodeTouchBuf[13] = (rawdata[1] & 0b10000000) != 0;
+    // electrodeTouchBuf[13] = bitRead(rawdata[1], 7);
   
     return electrodeTouchBuf;
   }
@@ -365,23 +423,23 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   bool* mpr121::readOORState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_OOR_STATUS, 2);
     
-    electrodeOORBuf[0] = (rawdata[0] & 0b00000001) != 0;
-    electrodeOORBuf[1] = (rawdata[0] & 0b00000010) != 0;
-    electrodeOORBuf[2] = (rawdata[0] & 0b00000100) != 0;
-    electrodeOORBuf[3] = (rawdata[0] & 0b00001000) != 0;
-    electrodeOORBuf[4] = (rawdata[0] & 0b00010000) != 0;
-    electrodeOORBuf[5] = (rawdata[0] & 0b00100000) != 0;
-    electrodeOORBuf[6] = (rawdata[0] & 0b01000000) != 0;
-    electrodeOORBuf[7] = (rawdata[0] & 0b10000000) != 0;
+    electrodeOORBuf[0] = bitRead(rawdata[0], 0);
+    electrodeOORBuf[1] = bitRead(rawdata[0], 1);
+    electrodeOORBuf[2] = bitRead(rawdata[0], 2);
+    electrodeOORBuf[3] = bitRead(rawdata[0], 3);
+    electrodeOORBuf[4] = bitRead(rawdata[0], 4);
+    electrodeOORBuf[5] = bitRead(rawdata[0], 5);
+    electrodeOORBuf[6] = bitRead(rawdata[0], 6);
+    electrodeOORBuf[7] = bitRead(rawdata[0], 7);
     
-    electrodeOORBuf[8] = (rawdata[1] & 0b00000001) != 0;
-    electrodeOORBuf[9] = (rawdata[1] & 0b00000010) != 0;
-    electrodeOORBuf[10] = (rawdata[1] & 0b00000100) != 0;
-    electrodeOORBuf[11] = (rawdata[1] & 0b00001000) != 0;
-    electrodeOORBuf[12] = (rawdata[1] & 0b00010000) != 0;
+    electrodeOORBuf[8] = bitRead(rawdata[1], 0);
+    electrodeOORBuf[9] = bitRead(rawdata[1], 1);
+    electrodeOORBuf[10] = bitRead(rawdata[1], 2);
+    electrodeOORBuf[11] = bitRead(rawdata[1], 3);
+    electrodeOORBuf[12] = bitRead(rawdata[1], 4);
     
-    electrodeOORBuf[13] = (rawdata[1] & 0b10000000) != 0;
-    electrodeOORBuf[14] = (rawdata[1] & 0b01000000) != 0;
+    electrodeOORBuf[13] = bitRead(rawdata[1], 7);
+    electrodeOORBuf[14] = bitRead(rawdata[1], 6);
   
     return electrodeOORBuf;
   }
@@ -390,7 +448,7 @@ mpr121::mpr121(byte addr, TwoWire *wire)
 
 // check the over current flag
 bool mpr121::readOverCurrent() {
-  return (readRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS) & 0b10000000) != 0;
+  return bitRead(readRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS), 7);
 }
 
 // clear the over current flag
@@ -401,11 +459,8 @@ void mpr121::clearOverCurrent() {
 
 // read filtered data for consecutive electrodes
 short* mpr121::readElectrodeData(byte electrode, byte count) {
-  if (electrode > 12)
+  if (!checkElectrodeNum(electrode, count))
     return electrodeDataBuf;
-
-  if (electrode + count > 13)
-    count = 13 - electrode;
 
   byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_FILTERED_DATA_LSB + electrode*2), count*2);
 
@@ -418,11 +473,8 @@ short* mpr121::readElectrodeData(byte electrode, byte count) {
   
 // read baseline values for consecutive electrodes
 byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
-  if (electrode > 12)
+  if (!checkElectrodeNum(electrode, count))
     return electrodeBaselineBuf;
-  
-  if (electrode + count > 13)
-    count = 13 - electrode;
 
   byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_BASELINE + electrode), count);
 
@@ -435,11 +487,8 @@ byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
 
 // write baseline value for consecutive electrodes
 void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
-  if (electrode > 12)
+  if (!checkElectrodeNum(electrode, count))
     return;
-
-  if (electrode + count > 13)
-    count = 13 - electrode;
 
   for (int i = 0; i < count; i++) {
     writeRegister((mpr121Register)(MPRREG_ELE0_BASELINE + (i+electrode)), value);
@@ -464,14 +513,8 @@ void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
 // GPIO can be used on pins 4-11 when they aren't used for sensing
 // use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
 void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
-  if (pin > 12)
+  if (!checkGPIOPinNum(pin, count))
     return;
-  
-  if (pin < 4)
-    pin = 4;
-  
-  if (pin + count > 12)
-    count = 12 - pin;
 
   pin -= 4; // easier to make it 0-indexed now
 
@@ -527,14 +570,8 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
 
 // write a digital value to consecutive GPIO pins
 void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
-  if (pin > 12)
+  if (!checkGPIOPinNum(pin, count))
     return;
-  
-  if (pin < 4)
-    pin = 4;
-  
-  if (pin + count > 12)
-    count = 12 - pin;
 
   pin -= 4; // easier to make it 0-indexed now
 

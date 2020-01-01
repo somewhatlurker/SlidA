@@ -58,6 +58,7 @@ private:
     bool electrodeTouchBuf[13];
     static bool electrodeOORBuf[15];
   #endif
+
   
   // write a value to an MPR121 register
   void writeRegister(mpr121Register addr, byte value);
@@ -71,6 +72,23 @@ private:
   byte readRegister(mpr121Register addr) {
     return readRegister(addr, 1)[0];
   }
+
+
+  // returns true if electrode num and count can be used or false if the function should immediately return
+  // may modify electrode and/or count to keep them in bounds as necessay
+  bool checkElectrodeNum(byte &electrode, byte &count);
+
+  // returns true if electrode num can be used or false if the function should immediately return
+  // may modify electrode to keep it in bounds as necessay
+  bool checkElectrodeNum(byte &electrode);
+
+  // returns true if pin num and count can be used or false if the function should immediately return
+  // may modify pin and/or count to keep them in bounds as necessay
+  bool checkGPIOPinNum(byte &pin, byte &count);
+
+  // returns true if pin num can be used or false if the function should immediately return
+  // may modify pin to keep it in bounds as necessay
+  bool checkGPIOPinNum(byte &pin);
 
 
   // set the touch and release thresholds for a subset of electrodes (AN3892)
@@ -215,6 +233,10 @@ public:
 
   // auto-conrig control register 1 stuff isn't implemented
 
+
+  // read one touch state bool
+  // also use this for reading GPIO inputs
+  bool readTouchState(byte electrode);
 
   #if MPR121_USE_BITFIELDS
     // read the 13 touch state bits
