@@ -17,6 +17,8 @@ void setup() {
     mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
     mpr.proxEnable = PROXIMITY_ENABLE ? MPR_ELEPROX_0_TO_11 : MPR_ELEPROX_DISABLED;
     mpr.startMPR(12);
+    //mpr.setGPIOMode(11, MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH);
+    //mpr.writeGPIODigital(11, true);
   }
 
   Serial.begin(115200);

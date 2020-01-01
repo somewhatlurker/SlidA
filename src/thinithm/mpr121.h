@@ -216,10 +216,9 @@ public:
   // auto-conrig control register 1 stuff isn't implemented
 
 
-  // TODO: GPIO
-
   #if MPR121_USE_BITFIELDS
     // read the 13 touch state bits
+    // also use this for reading GPIO inputs
     short readTouchState();
 
     // read the 15 out of range bits
@@ -228,6 +227,7 @@ public:
     short readOORState();
   #else
     // read the 13 touch state bools
+    // also use this for reading GPIO inputs
     bool* readTouchState();
 
     // read the 15 out of range bools
@@ -269,6 +269,27 @@ public:
   // easy way to set touchThresholds and releaseThresholds
   // prox sets whether to set for proximity detection too
   void setAllThresholds(byte touched, byte released, bool prox);
+
+
+  // set mode for consecutive GPIO pins
+  // GPIO can be used on pins 4-11 when they aren't used for sensing
+  // use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+  void setGPIOMode(byte pin, byte count, mpr121GPIOMode mode);
+
+  // set mode for a single GPIO pin
+  // GPIO can be used on pins 4-11 when they aren't used for sensing
+  // use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+  void setGPIOMode(byte pin, mpr121GPIOMode mode) {
+    setGPIOMode(pin, 1, mode);
+  }
+
+  // write a digital value to consecutive GPIO pins
+  void writeGPIODigital(byte pin, byte count, bool value);
+
+  // write a digital value to a single GPIO pin
+  void writeGPIODigital(byte pin, bool value) {
+    writeGPIODigital(pin, 1, value);
+  }
 
 
   // apply settings and enter run mode with a set number of electrodes

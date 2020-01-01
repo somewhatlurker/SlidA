@@ -319,6 +319,7 @@ mpr121::mpr121(byte addr, TwoWire *wire)
 
 #if MPR121_USE_BITFIELDS
   // read the 13 touch state bits
+    // also use this for reading GPIO inputs
   short mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     return rawdata[0] | (rawdata[1] << 8);
@@ -334,6 +335,7 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   }
 #else // MPR121_USE_BITFIELDS
   // read the 13 touch state bools
+    // also use this for reading GPIO inputs
   bool* mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     
@@ -455,6 +457,95 @@ void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
     touchThresholds[i] = touched;
     releaseThresholds[i] = released;
   }
+}
+
+
+// set mode for consecutive GPIO pins
+// GPIO can be used on pins 4-11 when they aren't used for sensing
+// use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
+  if (pin > 12)
+    return;
+  
+  if (pin < 4)
+    pin = 4;
+  
+  if (pin + count > 12)
+    count = 12 - pin;
+
+  pin -= 4; // easier to make it 0-indexed now
+
+  
+  byte enableByte = readRegister(MPRREG_GPIO_ENABLE);
+
+  // disable the modified outputs while changing stuff around
+  for (int i = 0; i < count; i++) {
+    bitClear(enableByte, pin + i);
+  }
+  writeRegister(MPRREG_GPIO_ENABLE, enableByte);
+
+  if (mode == MPR_GPIO_MODE_DISABLED)
+    return; // all done, no need to worry about other values
+
+
+  byte tempByte;
+  bool tempVal;
+
+  // set direction
+  tempByte = readRegister(MPRREG_GPIO_DIRECTION);
+  tempVal = bitRead(mode, 2);
+  for (int i = 0; i < count; i++) {
+    bitWrite(tempByte, pin + i, tempVal);
+  }
+  writeRegister(MPRREG_GPIO_DIRECTION, tempByte);
+
+  // set control 0
+  tempByte = readRegister(MPRREG_GPIO_CONTROL_0);
+  tempVal = bitRead(mode, 1);
+  for (int i = 0; i < count; i++) {
+    bitWrite(tempByte, pin + i, tempVal);
+  }
+  writeRegister(MPRREG_GPIO_CONTROL_0, tempByte);
+
+  // set control 1
+  tempByte = readRegister(MPRREG_GPIO_CONTROL_1);
+  tempVal = bitRead(mode, 0);
+  for (int i = 0; i < count; i++) {
+    bitWrite(tempByte, pin + i, tempVal);
+  }
+  writeRegister(MPRREG_GPIO_CONTROL_1, tempByte);
+
+
+  // set enable to final value
+  tempVal = bitRead(mode, 3);
+  for (int i = 0; i < count; i++) {
+    bitWrite(enableByte, pin + i, tempVal);
+  }
+  writeRegister(MPRREG_GPIO_ENABLE, enableByte);
+}
+
+
+// write a digital value to consecutive GPIO pins
+void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
+  if (pin > 12)
+    return;
+  
+  if (pin < 4)
+    pin = 4;
+  
+  if (pin + count > 12)
+    count = 12 - pin;
+
+  pin -= 4; // easier to make it 0-indexed now
+
+  
+  mpr121Register reg = value ? MPRREG_GPIO_DATA_SET : MPRREG_GPIO_DATA_CLEAR;
+
+  byte tempByte = 0;
+  for (int i = 0; i < count; i++) {
+    bitSet(tempByte, pin + i);
+  }
+  writeRegister(reg, tempByte);
 }
 
 
