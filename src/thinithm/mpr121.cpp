@@ -273,7 +273,7 @@ void mpr121::setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RE
 
 // set the GPIO PWM value for consecutive pins (AN3894)
 // max value is 15
-// pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+// pin 9 apparently has a logic bug and pin 10 must also be enabled to work
 //   (https://community.nxp.com/thread/305474)
 void mpr121::setPWM(byte pin, byte count, byte value) {
   if (!checkGPIOPinNum(pin, count))
@@ -624,7 +624,7 @@ void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
 
 // write an "analog" (PWM) value to consecutive GPIO pins
 // max value is 15
-// pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+// pin 9 apparently has a logic bug and pin 10 must also be enabled to work
 //   (https://community.nxp.com/thread/305474)
 void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
   if (!checkGPIOPinNum(pin, count))

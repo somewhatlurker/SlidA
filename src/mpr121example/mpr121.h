@@ -171,7 +171,7 @@ private:
 
   // set the GPIO PWM value for consecutive pins (AN3894)
   // max value is 15
-  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  // pin 9 apparently has a logic bug and pin 10 must also be enabled to work
   //   (https://community.nxp.com/thread/305474)
   void setPWM(byte pin, byte count, byte value);
   
@@ -322,13 +322,13 @@ public:
 
   // write an "analog" (PWM) value to consecutive GPIO pins
   // max value is 15
-  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  // pin 9 apparently has a logic bug and pin 10 must also be enabled to work
   //   (https://community.nxp.com/thread/305474)
   void writeGPIOAnalog(byte pin, byte count, byte value);
 
   // write an "analog" (PWM) value to a single GPIO pin
   // max value is 15
-  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  // pin 9 apparently has a logic bug and pin 10 must also be enabled to work
   //   (https://community.nxp.com/thread/305474)
   void writeGPIOAnalog(byte pin, byte value) {
     writeGPIOAnalog(pin, 1, value);
