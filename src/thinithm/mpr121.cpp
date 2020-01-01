@@ -271,6 +271,38 @@ void mpr121::setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RE
 }
 
 
+// set the GPIO PWM value for consecutive pins (AN3894)
+// max value is 15
+// pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+//   (https://community.nxp.com/thread/305474)
+void mpr121::setPWM(byte pin, byte count, byte value) {
+  if (!checkGPIOPinNum(pin, count))
+    return;
+
+  pin -= 4; // easier to make it 0-indexed now
+
+  byte value_4 = value & 0b1111;
+  
+  mpr121Register reg;
+  byte regVal;
+
+  for (int i = 0; i < count; i++) {
+    if (i == 0 || (pin + i) % 2 == 0) { // if just starting of moving to a new register's start
+      reg = MPRREG_PWM_DUTY_0 + (pin + i)/2;
+      regVal = readRegister(reg);
+    }
+    
+    if ((pin + i) % 2 == 0)
+      regVal = (regVal & 0b11110000) | value_4;
+    else
+      regVal = (regVal & 0b00001111) | (value_4 << 4);
+
+    if ((pin + i) % 2 == 1 || i == count - 1) // if the last of a register or the last iteration
+      writeRegister(reg, regVal);
+  }
+}
+
+
 // create an MPR121 device with sane default settings
 mpr121::mpr121(byte addr, TwoWire *wire)
 {
@@ -573,10 +605,39 @@ void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
   if (!checkGPIOPinNum(pin, count))
     return;
 
+  // disable PWM for affected pins
+  // (doesn't use 0-indexed GPIO pin number)
+  setPWM(pin, count, 0);
+
   pin -= 4; // easier to make it 0-indexed now
 
   
   mpr121Register reg = value ? MPRREG_GPIO_DATA_SET : MPRREG_GPIO_DATA_CLEAR;
+
+  byte tempByte = 0;
+  for (int i = 0; i < count; i++) {
+    bitSet(tempByte, pin + i);
+  }
+  writeRegister(reg, tempByte);
+}
+
+
+// write an "analog" (PWM) value to consecutive GPIO pins
+// max value is 15
+// pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+//   (https://community.nxp.com/thread/305474)
+void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
+  if (!checkGPIOPinNum(pin, count))
+    return;
+
+  // set PWM for affected pins
+  // (doesn't use 0-indexed GPIO pin number)
+  setPWM(pin, count, value);
+
+  pin -= 4; // easier to make it 0-indexed now
+
+
+  mpr121Register reg = value == 0 ? MPRREG_GPIO_DATA_CLEAR : MPRREG_GPIO_DATA_SET;
 
   byte tempByte = 0;
   for (int i = 0; i < count; i++) {

@@ -19,6 +19,7 @@ void setup() {
     mpr.startMPR(12);
     //mpr.setGPIOMode(11, MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH);
     //mpr.writeGPIODigital(11, true);
+    //mpr.writeGPIOAnalog(11, 8);
   }
 
   Serial.begin(115200);

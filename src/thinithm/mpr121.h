@@ -167,6 +167,13 @@ private:
   // ARE: "Automatic Reconfiguration Enable" will reconfigure out of range (failed) channels every sampling interval
   // ACE: "Automatic Configuration Enable" will enable/disable auto-configuration when entering run mode
   void setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RETRY, mpr121AutoConfigBVA BVA, bool ARE, bool ACE);
+
+
+  // set the GPIO PWM value for consecutive pins (AN3894)
+  // max value is 15
+  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  //   (https://community.nxp.com/thread/305474)
+  void setPWM(byte pin, byte count, byte value);
   
 public:
   // create an MPR121 device with sane default settings
@@ -311,6 +318,20 @@ public:
   // write a digital value to a single GPIO pin
   void writeGPIODigital(byte pin, bool value) {
     writeGPIODigital(pin, 1, value);
+  }
+
+  // write an "analog" (PWM) value to consecutive GPIO pins
+  // max value is 15
+  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  //   (https://community.nxp.com/thread/305474)
+  void writeGPIOAnalog(byte pin, byte count, byte value);
+
+  // write an "analog" (PWM) value to a single GPIO pin
+  // max value is 15
+  // pin 9 apparently has a logic bug and must be set the same as pin 10 to work
+  //   (https://community.nxp.com/thread/305474)
+  void writeGPIOAnalog(byte pin, byte value) {
+    writeGPIOAnalog(pin, 1, value);
   }
 
 
