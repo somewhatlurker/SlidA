@@ -15,8 +15,13 @@
  *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
- *   bool* touches = mpr.readTouchState();
- *   bool touch0 = touches[0];
+ *   #if MPR121_USE_BITFIELDS
+ *     short touches = mpr.readTouchState();
+ *     bool touch0 = bitRead(touches, 0);
+ *   #else // MPR121_USE_BITFIELDS
+ *     bool* touches = mpr.readTouchState();
+ *     bool touch0 = touches[0];
+ *   #endif // MPR121_USE_BITFIELDS
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
  *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
@@ -34,9 +39,11 @@
 #include "mpr121.h"
 
 byte mpr121::i2cReadBuf[MPR121_I2C_BUFLEN];
-bool mpr121::electrodeOORBuf[15];
 short mpr121::electrodeDataBuf[13];
 byte mpr121::electrodeBaselineBuf[13];
+#if !MPR121_USE_BITFIELDS
+  bool mpr121::electrodeOORBuf[15];
+#endif
 
 // write a value to an MPR121 register
 void mpr121::writeRegister(mpr121Register addr, byte value) {
@@ -79,8 +86,8 @@ void mpr121::setElectrodeThresholds(byte electrode, byte count, byte touchThresh
     count = 13 - electrode;
 
   for (int i = 0; i < count; i++) {
-    writeRegister((mpr121Register)(0x41 + (i+electrode)*2), touchThreshold);
-    writeRegister((mpr121Register)(0x42 + (i+electrode)*2), touchThreshold);
+    writeRegister((mpr121Register)(MPRREG_ELE0_TOUCH_THRESHOLD + (i+electrode)*2), touchThreshold);
+    writeRegister((mpr121Register)(MPRREG_ELE0_RELEASE_THRESHOLD + (i+electrode)*2), touchThreshold);
   }
 }
 
@@ -309,30 +316,74 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   autoConfigEnableCalibration = true;
 }
 
-  
-// read the 13 touch state bools and the over current flag
-bool* mpr121::readTouchState() {
-  byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
-  
-  electrodeTouchBuf[0] = (rawdata[0] & 0b00000001) != 0;
-  electrodeTouchBuf[1] = (rawdata[0] & 0b00000010) != 0;
-  electrodeTouchBuf[2] = (rawdata[0] & 0b00000100) != 0;
-  electrodeTouchBuf[3] = (rawdata[0] & 0b00001000) != 0;
-  electrodeTouchBuf[4] = (rawdata[0] & 0b00010000) != 0;
-  electrodeTouchBuf[5] = (rawdata[0] & 0b00100000) != 0;
-  electrodeTouchBuf[6] = (rawdata[0] & 0b01000000) != 0;
-  electrodeTouchBuf[7] = (rawdata[0] & 0b10000000) != 0;
-  
-  electrodeTouchBuf[8] = (rawdata[1] & 0b00000001) != 0;
-  electrodeTouchBuf[9] = (rawdata[1] & 0b00000010) != 0;
-  electrodeTouchBuf[10] = (rawdata[1] & 0b00000100) != 0;
-  electrodeTouchBuf[11] = (rawdata[1] & 0b00001000) != 0;
-  electrodeTouchBuf[12] = (rawdata[1] & 0b00010000) != 0;
-  
-  // electrodeTouchBuf[13] = (rawdata[1] & 0b10000000) != 0;
 
-  return electrodeTouchBuf;
-}
+#if MPR121_USE_BITFIELDS
+  // read the 13 touch state bits
+  short mpr121::readTouchState() {
+    byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
+    return rawdata[0] | (rawdata[1] << 8);
+  }
+
+  // read the 15 out of range bits
+  // [13]: auto-config fail flag
+  // [14]: auto-reconfig fail flag
+  short mpr121::readOORState() {
+    byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_OOR_STATUS, 2);
+    byte autoConfBits = ((rawdata[1] & 0b10000000) >> 2) | (rawdata[1] & 0b01000000);
+    return rawdata[0] | ((rawdata[1] & 0b00011111) << 8) | (autoConfBits << 8);
+  }
+#else // MPR121_USE_BITFIELDS
+  // read the 13 touch state bools
+  bool* mpr121::readTouchState() {
+    byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
+    
+    electrodeTouchBuf[0] = (rawdata[0] & 0b00000001) != 0;
+    electrodeTouchBuf[1] = (rawdata[0] & 0b00000010) != 0;
+    electrodeTouchBuf[2] = (rawdata[0] & 0b00000100) != 0;
+    electrodeTouchBuf[3] = (rawdata[0] & 0b00001000) != 0;
+    electrodeTouchBuf[4] = (rawdata[0] & 0b00010000) != 0;
+    electrodeTouchBuf[5] = (rawdata[0] & 0b00100000) != 0;
+    electrodeTouchBuf[6] = (rawdata[0] & 0b01000000) != 0;
+    electrodeTouchBuf[7] = (rawdata[0] & 0b10000000) != 0;
+    
+    electrodeTouchBuf[8] = (rawdata[1] & 0b00000001) != 0;
+    electrodeTouchBuf[9] = (rawdata[1] & 0b00000010) != 0;
+    electrodeTouchBuf[10] = (rawdata[1] & 0b00000100) != 0;
+    electrodeTouchBuf[11] = (rawdata[1] & 0b00001000) != 0;
+    electrodeTouchBuf[12] = (rawdata[1] & 0b00010000) != 0;
+    
+    // electrodeTouchBuf[13] = (rawdata[1] & 0b10000000) != 0;
+  
+    return electrodeTouchBuf;
+  }
+
+  // read the 15 out of range bools
+  // [13]: auto-config fail flag
+  // [14]: auto-reconfig fail flag
+  bool* mpr121::readOORState() {
+    byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_OOR_STATUS, 2);
+    
+    electrodeOORBuf[0] = (rawdata[0] & 0b00000001) != 0;
+    electrodeOORBuf[1] = (rawdata[0] & 0b00000010) != 0;
+    electrodeOORBuf[2] = (rawdata[0] & 0b00000100) != 0;
+    electrodeOORBuf[3] = (rawdata[0] & 0b00001000) != 0;
+    electrodeOORBuf[4] = (rawdata[0] & 0b00010000) != 0;
+    electrodeOORBuf[5] = (rawdata[0] & 0b00100000) != 0;
+    electrodeOORBuf[6] = (rawdata[0] & 0b01000000) != 0;
+    electrodeOORBuf[7] = (rawdata[0] & 0b10000000) != 0;
+    
+    electrodeOORBuf[8] = (rawdata[1] & 0b00000001) != 0;
+    electrodeOORBuf[9] = (rawdata[1] & 0b00000010) != 0;
+    electrodeOORBuf[10] = (rawdata[1] & 0b00000100) != 0;
+    electrodeOORBuf[11] = (rawdata[1] & 0b00001000) != 0;
+    electrodeOORBuf[12] = (rawdata[1] & 0b00010000) != 0;
+    
+    electrodeOORBuf[13] = (rawdata[1] & 0b10000000) != 0;
+    electrodeOORBuf[14] = (rawdata[1] & 0b01000000) != 0;
+  
+    return electrodeOORBuf;
+  }
+#endif // MPR121_USE_BITFIELDS
 
 
 // check the over current flag
@@ -344,34 +395,6 @@ bool mpr121::readOverCurrent() {
 void mpr121::clearOverCurrent() {
   writeRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS, 0b10000000);
 }
-
-
-// read the 15 out of range bools
-// [13]: auto-config fail flag
-// [14]: auto-reconfig fail flag
-bool* mpr121::readOORState() {
-  byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_OOR_STATUS, 2);
-  
-  electrodeOORBuf[0] = (rawdata[0] & 0b00000001) != 0;
-  electrodeOORBuf[1] = (rawdata[0] & 0b00000010) != 0;
-  electrodeOORBuf[2] = (rawdata[0] & 0b00000100) != 0;
-  electrodeOORBuf[3] = (rawdata[0] & 0b00001000) != 0;
-  electrodeOORBuf[4] = (rawdata[0] & 0b00010000) != 0;
-  electrodeOORBuf[5] = (rawdata[0] & 0b00100000) != 0;
-  electrodeOORBuf[6] = (rawdata[0] & 0b01000000) != 0;
-  electrodeOORBuf[7] = (rawdata[0] & 0b10000000) != 0;
-  
-  electrodeOORBuf[8] = (rawdata[1] & 0b00000001) != 0;
-  electrodeOORBuf[9] = (rawdata[1] & 0b00000010) != 0;
-  electrodeOORBuf[10] = (rawdata[1] & 0b00000100) != 0;
-  electrodeOORBuf[11] = (rawdata[1] & 0b00001000) != 0;
-  electrodeOORBuf[12] = (rawdata[1] & 0b00010000) != 0;
-  
-  electrodeTouchBuf[13] = (rawdata[1] & 0b10000000) != 0;
-  electrodeTouchBuf[14] = (rawdata[1] & 0b01000000) != 0;
-
-  return electrodeTouchBuf;
-}
   
 
 // read filtered data for consecutive electrodes
@@ -382,30 +405,30 @@ short* mpr121::readElectrodeData(byte electrode, byte count) {
   if (electrode + count > 13)
     count = 13 - electrode;
 
-  byte* rawdata = readRegister((mpr121Register)(0x04 + electrode*2), count*2);
+  byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_FILTERED_DATA_LSB + electrode*2), count*2);
 
   for (int i = 0; i < count; i++) {
-    electrodeDataBuf[i] = rawdata[i*2] | ((rawdata[i*2 + 1] & 0b00000011) << 8);
+    electrodeDataBuf[electrode + i] = rawdata[i*2] | ((rawdata[i*2 + 1] & 0b00000011) << 8);
   }
 
-  return electrodeDataBuf;
+  return &electrodeDataBuf[electrode];
 }
   
 // read baseline values for consecutive electrodes
 byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
   if (electrode > 12)
     return electrodeBaselineBuf;
-
+  
   if (electrode + count > 13)
     count = 13 - electrode;
 
-  byte* rawdata = readRegister((mpr121Register)(0x1e + electrode), count);
+  byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_BASELINE + electrode), count);
 
   for (int i = 0; i < count; i++) {
-    electrodeBaselineBuf[i] = rawdata[i];
+    electrodeBaselineBuf[electrode + i] = rawdata[i];
   }
 
-  return electrodeBaselineBuf;
+  return &electrodeBaselineBuf[electrode];
 }
 
 // write baseline value for consecutive electrodes
@@ -417,7 +440,7 @@ void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
     count = 13 - electrode;
 
   for (int i = 0; i < count; i++) {
-    writeRegister((mpr121Register)(0x1e + (i+electrode)), value);
+    writeRegister((mpr121Register)(MPRREG_ELE0_BASELINE + (i+electrode)), value);
   }
 }
 

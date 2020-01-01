@@ -178,8 +178,15 @@ void doSliderScan() {
     // read all mpr touches into allTouches
     for (int i = 0; i < NUM_MPRS; i++) {
       mpr121 &mpr = mprs[i];
-      bool* touches = mpr.readTouchState();
-      memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+      #if MPR121_USE_BITFIELDS
+        short touches = mpr.readTouchState();
+        for (int j = 0; j < 12; j++) {
+          allTouches[12*i + j] = bitRead(touches, j);
+        }
+      #else // MPR121_USE_BITFIELDS
+        bool* touches = mpr.readTouchState();
+        memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
+      #endif // MPR121_USE_BITFIELDS
     }
   
     // apply touch data to output buffer

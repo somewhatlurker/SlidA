@@ -15,8 +15,13 @@
  *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
- *   bool* touches = mpr.readTouchState();
- *   bool touch0 = touches[0];
+ *   #if MPR121_USE_BITFIELDS
+ *     short touches = mpr.readTouchState();
+ *     bool touch0 = bitRead(touches, 0);
+ *   #else // MPR121_USE_BITFIELDS
+ *     bool* touches = mpr.readTouchState();
+ *     bool touch0 = touches[0];
+ *   #endif // MPR121_USE_BITFIELDS
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
  *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
@@ -38,16 +43,21 @@
 #define MPR121_I2C_BUFLEN 26 // note: arduino Wire library defines BUFFER_LENGTH as 32, so much larger values won't work
 #endif
 
+// use bitfields (stored in short) instead electrodeTouchBuf and electrodeOORBuf
+#define MPR121_USE_BITFIELDS false
+
 class mpr121 {
 private:
   byte i2cAddr;
   TwoWire* i2cWire;
 
   static byte i2cReadBuf[MPR121_I2C_BUFLEN];
-  bool electrodeTouchBuf[13];
-  static bool electrodeOORBuf[15];
   static short electrodeDataBuf[13];
   static byte electrodeBaselineBuf[13];
+  #if !MPR121_USE_BITFIELDS
+    bool electrodeTouchBuf[13];
+    static bool electrodeOORBuf[15];
+  #endif
   
   // write a value to an MPR121 register
   void writeRegister(mpr121Register addr, byte value);
@@ -208,9 +218,23 @@ public:
 
   // TODO: GPIO
 
+  #if MPR121_USE_BITFIELDS
+    // read the 13 touch state bits
+    short readTouchState();
 
-  // read the 13 touch state bools
-  bool* readTouchState();
+    // read the 15 out of range bits
+    // [13]: auto-config fail flag
+    // [14]: auto-reconfig fail flag
+    short readOORState();
+  #else
+    // read the 13 touch state bools
+    bool* readTouchState();
+
+    // read the 15 out of range bools
+    // [13]: auto-config fail flag
+    // [14]: auto-reconfig fail flag
+    bool* readOORState();
+  #endif
 
   // check the over current flag
   bool readOverCurrent();
@@ -218,15 +242,10 @@ public:
   // clear the over current flag
   void clearOverCurrent();
 
-  // read the 15 out of range bools
-  // [13]: auto-config fail flag
-  // [14]: auto-reconfig fail flag
-  bool* readOORState();
-
   // read filtered data for consecutive electrodes
   short* readElectrodeData(byte electrode, byte count);
   
-  // read filtered data for a single electrodes
+  // read filtered data for a single electrode
   short readElectrodeData(byte electrode) {
     return readElectrodeData(electrode, 1)[0];
   }
@@ -234,7 +253,7 @@ public:
   // read baseline values for consecutive electrodes
   byte* readElectrodeBaseline(byte electrode, byte count);
   
-  // read baseline value for a single electrodes
+  // read baseline value for a single electrode
   byte readElectrodeBaseline(byte electrode) {
     return readElectrodeBaseline(electrode, 1)[0];
   }

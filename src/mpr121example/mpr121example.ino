@@ -37,9 +37,15 @@ void loop() {
       }
     }
     else {
-      bool* touches = mpr.readTouchState();
-      for (int j = 0; j < numElectrodes; j++)
-        Serial.print(touches[j]);
+      #if MPR121_USE_BITFIELDS
+        short touches = mpr.readTouchState();
+        for (int j = 0; j < numElectrodes; j++)
+          Serial.print(bitRead(touches, j));
+      #else // MPR121_USE_BITFIELDS
+        bool* touches = mpr.readTouchState();
+        for (int j = 0; j < numElectrodes; j++)
+          Serial.print(touches[j]);
+      #endif // MPR121_USE_BITFIELDS
     }
     Serial.print(" ");
   }
