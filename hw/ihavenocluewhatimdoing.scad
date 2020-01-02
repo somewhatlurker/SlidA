@@ -67,15 +67,6 @@ module slider_holes (n = 4)
     {
         circle(pcb_hole_size/2, $fn=hole_resolution);
     }
-    
-    translate ([-key_area_width/2 - pcb_hole_size/2 - pcb_width_ledsoffset/2 - .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.1, 0])
-    {
-        circle(pcb_hole_size/2, $fn=hole_resolution);
-    }
-    translate ([key_area_width/2 + pcb_hole_size/2 + pcb_width_ledsoffset/2 + .2, -key_area_height/2 - key_top_bottom_padding/2 + 0.1, 0])
-    {
-        circle(pcb_hole_size/2, $fn=hole_resolution);
-    }
 }
 
 module slider_pcbs (n = 4)
@@ -140,7 +131,7 @@ module slider_pcbs (n = 4)
     }
 }
 
-module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, top_gap = 0, top_border = key_top_bottom_padding, bottom_border = key_top_bottom_padding + pcb_hole_size + 1.5)
+module slider_keys (width = key_area_width, height = key_area_height, thickness = key_thickness, top_gap = 0, top_border = key_top_bottom_padding, bottom_border = key_top_bottom_padding + pcb_hole_size + 1.5, top_border_retainer = key_top_bottom_padding)
 {
     key_count = 16;
     sep_width = key_separator_width;
@@ -153,27 +144,27 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     linear_extrude (height = thickness)
     for (i=[0:key_count-1])
     {
-        translate ([-width/2 + (sep_width + key_width) * i + sep_width, -key_height/2])
+        translate ([-width/2 + (sep_width + key_width) * i + sep_width + 0.075, -key_height/2])
         {
-            square([key_width, key_height - 0.001]);
+            square([key_width - 0.15, key_height - 0.1]);
         }
     }
     
-    // separators + framse
+    // separators + frame
     color("green", 1.0)
     linear_extrude (height = thickness)
     difference ()
     {
         union ()
         {
-            // separators + framse
+            // separators + frame
             for (i=[0:(key_count)/4 - 1])
             {
                 for (j=[0:3])
                 {
-                    translate ([-width/2 + (sep_width + key_width) * (i*4 + j) + 0.001, -key_height/2])
+                    translate ([-width/2 + (sep_width + key_width) * (i*4 + j), -key_height/2])
                     {
-                        square([sep_width - 0.002, key_height]);
+                        square([sep_width, key_height]);
                     }
                 }
                 
@@ -182,7 +173,7 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
                 {
                     difference ()
                     {
-                        square([sep_width*4.5 + key_width*4 - pcb_hole_dist_x + pcb_hole_size/2 + 1.5, bottom_border]);
+                        square([sep_width*4.5 + key_width*4 - pcb_hole_dist_x + pcb_hole_size/2 + 2, bottom_border]);
                         
                         // cutouts to help control light leakage
                         for (j=[0:3])
@@ -200,9 +191,9 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
                 }
             }
             // messy hack to add last separator
-            translate ([width/2 - sep_width + 0.001, -key_height/2])
+            translate ([width/2 - sep_width, -key_height/2])
             {
-                square([sep_width - 0.002, key_height]);
+                square([sep_width, key_height]);
             }
             translate ([width/2 - sep_width/2 - pcb_hole_dist_x + pcb_hole_size/2, key_height/2])
             {
@@ -216,6 +207,16 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
                     }
                 }
             }
+            
+            // messy hack for top retainer's retention
+            translate ([-width/2, -key_height/2 - top_border_retainer])
+            {
+                square([sep_width, bottom_border]);
+            }
+            translate ([width/2 - sep_width, -key_height/2 - top_border_retainer])
+            {
+                square([sep_width, bottom_border]);
+            }
         }
         
         slider_holes(4);
@@ -226,13 +227,13 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     color("red", 1.0)
     linear_extrude (height = thickness)
     {
-        translate ([-width/2 - pcb_width_ledsoffset/2, -key_height/2 - top_border - top_gap])
+        translate ([-width/2 + sep_width + 0.1, -key_height/2 - top_border])
         {
-            square([width/2 + pcb_width_ledsoffset/2 + sep_width/2, top_border]);
+            square([(key_width + sep_width) * 8 - 0.1, top_border]);
         }
-        translate ([sep_width/2 + top_gap, -key_height/2 - top_border - top_gap])
+        translate ([-width/2 + sep_width + (key_width + sep_width) * 8 + 0.1, -key_height/2 - top_border])
         {
-            square([width/2 + pcb_width_ledsoffset/2 - sep_width/2, top_border]);
+            square([(key_width + sep_width) * 8 - sep_width - 0.2, top_border]);
         }
     }
 }
