@@ -49,7 +49,7 @@ enum mpr121ElectrodeConfigProx : byte {
   MPR_ELEPROX_DISABLED = 0,
   MPR_ELEPROX_0_TO_1 = 1,
   MPR_ELEPROX_0_TO_3 = 2,
-  MPR_ELEPROX_0_TO_11 = 2,
+  MPR_ELEPROX_0_TO_11 = 3,
 };
 
 enum mpr121AutoConfigRetry : byte {
