@@ -75,7 +75,7 @@ bool segaSlider::checkSliderPacketSum(const sliderPacket packet, byte expectedSu
 // maxpos should be set to the end of currently valid data (head)
 // check for errors using IsValid on the output packet.
 //   if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &bufpos, int maxpos) {
+sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos, int maxpos) {
   int startOffset = -1;
   int endOffset = -1;
   
@@ -90,8 +90,11 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
 
   maxpos %= bufsize;
 
+  bool firstloop = true;
+  
   // find the beginning and end of a packet
-  for (int i = bufpos; (i + 1) % bufsize != bufpos && i != maxpos; i++, i %= bufsize) {
+  for (int i = bufpos; (i != bufpos && i != maxpos) || firstloop; i++, i %= bufsize) {
+    firstloop = false;
     if (data[i] == SLIDER_FRAMING_START) {
       if (startOffset == -1)
       {
@@ -112,7 +115,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
   int outpos = 0; // define in this scope so it can be checked later
   for (int i = startOffset; i != endOffset && outpos < MAX_SLIDER_PACKET_SIZE; i++, i %= bufsize)
   {
-    if (data[i] == SLIDER_FRAMING_ESCAPE) { // esscaped byte sequence
+    if (data[i] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
       i++; i %= bufsize; // skip SLIDER_FRAMING_ESCAPE
       if (i == endOffset) // check data hasn't ended
         break;
@@ -131,6 +134,7 @@ sliderPacket segaSlider::parseRawSliderData(const byte* data, int bufsize, int &
     outPkt.Data = &packetData[3];
 
     outPkt.IsValid = checkSliderPacketSum(outPkt, packetData[outPkt.DataLength + 3]);
+    data[startOffset] = 0; // render the packet unreadable
   }
 
   if (forceAdvance || outPkt.IsValid) bufpos = endOffset;
@@ -182,10 +186,7 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
 bool segaSlider::readSerial() {
   if (serialStream->available()) {
     // read data from serial into a ring buffer, ending at the current write position
-    // it may be somewhat better to only write until the current read position, but there's a chance that could lock everything when receiving bad data
-    // the current behaviour may drop data sometimes, but that shouldn't really matter much.. sending data is much more important and doesn't depend on this at all
     #if SLIDER_SERIAL_TEXT_MODE
-      int newWritePos = serialBufWritePos;
       
       // while serial is available, read space separated strings into buffer bytes
       while (serialStream->available()) {
@@ -197,28 +198,30 @@ bool segaSlider::readSerial() {
           serialTextBuf[serialTextReadlen] = 0; // null-terminate buffer
           if (serialTextReadlen > 0) {
             serialTextReadlen = 0; // reset serialTextBuf pos
-            serialInBuf[newWritePos] = atoi(serialTextBuf);
-            newWritePos++;
-            newWritePos %= SLIDER_SERIAL_BUF_SIZE;
-            if (newWritePos == serialBufWritePos)
-              break; // don't overwrite data that was only just read
+            serialInBuf[serialBufWritePos] = atoi(serialTextBuf);
+            serialBufWritePos++;
+            serialBufWritePos %= SLIDER_SERIAL_BUF_SIZE;
+            if (serialBufWritePos == serialBufReadPos)
+              break; // don't write past the read pos
           }
         }
         else {
           serialTextReadlen++;
         }
       }
-      serialBufWritePos = newWritePos;
       
     #else // SLIDER_SERIAL_TEXT_MODE
-      int newWritePos = serialBufWritePos;
-      newWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], SLIDER_SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SLIDER_SERIAL_BUF_SIZE
-      if (newWritePos >= SLIDER_SERIAL_BUF_SIZE)
-      {
-        newWritePos %= SLIDER_SERIAL_BUF_SIZE;
-        newWritePos += serialStream->readBytes(&serialInBuf[newWritePos], serialBufWritePos - newWritePos); // read from newWritePos to (old)serialBufWritePos
+      if (serialBufReadPos > serialBufWritePos) {
+        serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], serialBufReadPos - serialBufWritePos); // read from serialBufWritePos to serialBufReadPos
       }
-      serialBufWritePos = newWritePos;
+      else {
+        serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], SLIDER_SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SLIDER_SERIAL_BUF_SIZE
+        if (serialBufWritePos >= SLIDER_SERIAL_BUF_SIZE)
+        {
+          serialBufWritePos %= SLIDER_SERIAL_BUF_SIZE;
+          serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], serialBufReadPos - serialBufWritePos); // read from serialBufWritePos to serialBufReadPos
+        }
+      }
       
     #endif // SLIDER_SERIAL_TEXT_MODE
     

@@ -6,7 +6,9 @@ make sure to keep the trailing spaces
 // SLIDER_BOARDINFO
 255 240 0 17 
 // SLIDER_LED (make one LED green)
-255 2 3 0 254 0 254 
+255 2 4 63 0 0 254 190 
+// SLIDER_LED (32 black LEDs)
+255 2 97 63 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 95 
 // SLIDER_SCAN_ON
 255 3 0 254 
 // SLIDER_SCAN_OFF

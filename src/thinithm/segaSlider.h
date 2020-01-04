@@ -86,7 +86,7 @@ private:
   // maxpos should be set to the end of currently valid data (head)
   // check for errors using IsValid on the output packet.
   //   if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-  sliderPacket parseRawSliderData(const byte* data, int datalen, int &bufpos, int maxpos);
+  sliderPacket parseRawSliderData(byte* data, int datalen, int &bufpos, int maxpos);
   
 public:
   segaSlider(Stream* serial = &Serial);

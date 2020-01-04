@@ -22,6 +22,9 @@
 // time to wait after losing serial connection before disabling scan and LEDs
 #define SERIAL_TIMEOUT_MS 10000
 
+// maximum number of packets to process in one loop
+#define MAX_PACKETS_PER_LOOP 4
+
 
 // slider LED vars
 #define NUM_SLIDER_LEDS 32
@@ -38,6 +41,7 @@ enum errorState : byte {
   ERRORSTATE_SERIAL_TIMEOUT = 1, // not receiving serial data (timeout)
   ERRORSTATE_PACKET_CHECKSUM = 2, // at least one invalid packet (due to checksum error) was received
   ERRORSTATE_PACKET_OK = 4, // at least one valid packet was received
+  ERRORSTATE_PACKET_MAX_EXCEEDED = 8, // number of packets exceeded MAX_PACKETS_PER_LOOP
 };
 errorState operator |(errorState a, errorState b)
 {
@@ -66,7 +70,7 @@ errorState curError;
   #define STATUS_LED_BASIC_2_PIN LED_BUILTIN
 #endif
 
-#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM)
+#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | ERRORSTATE_PACKET_MAX_EXCEEDED)
 #define STATUS_LED_BASIC_2_ERRORS (ERRORSTATE_PACKET_OK)
 
 
@@ -91,8 +95,8 @@ sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, (byte*)&boardInfoData, sizeof
 
 
 // mpr121s
-#define NUM_MPRS 4
-mpr121 mprs[NUM_MPRS] = { mpr121(0x5a), mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
+#define NUM_MPRS 1
+mpr121 mprs[NUM_MPRS] = { mpr121(0x5a) }; //, mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
 
 
 // air tower
@@ -126,7 +130,7 @@ void setup() {
   FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
 
 
-  Serial.setTimeout(0.01);
+  Serial.setTimeout(0);
   Serial.begin(115200);
   while(!Serial) {} // wait for serial to be ready on USB boards
 }
@@ -202,10 +206,6 @@ void doSliderScan() {
   #endif // FAKE_DATA
   
   sliderProtocol.sendSliderPacket(scanPacket);
-
-  #if FAKE_DATA
-    sliderBuf[curSliderPatternByte] = 0x00;
-  #endif
 }
 
 // perform an air sensor scan and send it to Keyboard
@@ -235,7 +235,6 @@ void loop() {
   //curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
   curSliderDef = allSliderDefs[curSliderMode];
 
-
   // check for new slider data
   // (in an if to save processing if nothing was available)
   if (sliderProtocol.readSerial()) {
@@ -243,7 +242,8 @@ void loop() {
     
     // while packets can be read, process them
     sliderPacket pkt;
-    while (true) {
+    byte pktCount = 0;
+    while (pktCount < MAX_PACKETS_PER_LOOP) {
       pkt = sliderProtocol.readNextPacket();
       
       if (!pkt.IsValid) {
@@ -258,6 +258,7 @@ void loop() {
       }
 
       curError |= ERRORSTATE_PACKET_OK;
+      pktCount++;
 
       // handle the incoming packet because it was valid
       switch(pkt.Command) {
@@ -317,6 +318,9 @@ void loop() {
           sliderProtocol.sendSliderPacket(emptyPacket);
       }
     }
+
+    if (pktCount == MAX_PACKETS_PER_LOOP)
+      curError |= ERRORSTATE_PACKET_MAX_EXCEEDED;
   }
 
   // disable scan and set error if serial is dead
@@ -361,7 +365,7 @@ void loop() {
     
     // if slider touch state has changed (interrupt was triggered), send data
     // also send as a keep alive if slider touch state hasn't changed recently
-    if ( (digitalRead(PIN_SLIDER_IRQ) == LOW) || ((millis() - lastSliderSendMillis) > 500) ) {
+    if ( /*(digitalRead(PIN_SLIDER_IRQ) == LOW) ||*/ ((millis() - lastSliderSendMillis) > 50) ) {
       doSliderScan();
       lastSliderSendMillis = millis();
     }
