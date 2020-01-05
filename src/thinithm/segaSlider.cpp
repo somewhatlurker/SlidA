@@ -75,7 +75,7 @@ bool segaSlider::checkSliderPacketSum(const sliderPacket packet, byte expectedSu
 // maxpos should be set to the end of currently valid data (head)
 // check for errors using IsValid on the output packet.
 //   if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos, int maxpos) {
+sliderPacket segaSlider::parseRawSliderData(byte* data, byte bufsize, byte &bufpos, byte maxpos) {
   int startOffset = -1;
   int endOffset = -1;
   
@@ -93,7 +93,7 @@ sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos
   bool firstloop = true;
   
   // find the beginning and end of a packet
-  for (int i = bufpos; (i != bufpos && i != maxpos) || firstloop; i++, i %= bufsize) {
+  for (byte i = bufpos; (i != bufpos && i != maxpos) || firstloop; i++, i %= bufsize) {
     firstloop = false;
     if (data[i] == SLIDER_FRAMING_START) {
       if (startOffset == -1)
@@ -112,8 +112,9 @@ sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos
   if (endOffset == -1) endOffset = maxpos; // if no second split point is found, use until maxpos
 
   // unescape and copy bytes
-  int outpos = 0; // define in this scope so it can be checked later
-  for (int i = startOffset; i != endOffset && outpos < MAX_SLIDER_PACKET_SIZE; i++, i %= bufsize)
+  byte outpos = 0; // define in this scope so it can be checked later
+  //int maxEndOffset = 0;
+  for (byte i = startOffset; i != endOffset /* && (outpos < packetData[2] + 4 || outpos <= 2) */ && outpos < MAX_SLIDER_PACKET_SIZE; i++, i %= bufsize)
   {
     if (data[i] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
       i++; i %= bufsize; // skip SLIDER_FRAMING_ESCAPE
@@ -125,6 +126,7 @@ sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos
       packetData[outpos] = data[i];
     }
     outpos++;
+    //maxEndOffset = i;
   }
 
   outPkt.DataLength = packetData[2];
@@ -135,8 +137,18 @@ sliderPacket segaSlider::parseRawSliderData(byte* data, int bufsize, int &bufpos
 
     outPkt.IsValid = checkSliderPacketSum(outPkt, packetData[outPkt.DataLength + 3]);
     data[startOffset] = 0; // render the packet unreadable
+    forceAdvance = true;
   }
 
+  /*
+  if (endOffset == maxpos)
+    endOffset = maxEndOffset;
+  if ((endOffset < startOffset) && (maxEndOffset < endOffset || maxEndOffset > startOffset))
+    endOffset = maxEndOffset;
+  else if ((endOffset > startOffset) && (maxEndOffset > startOffset && maxEndOffset < endOffset))
+    endOffset = maxEndOffset;
+  */
+  //endOffset = maxEndOffset;
   if (forceAdvance || outPkt.IsValid) bufpos = endOffset;
   
   return outPkt;
@@ -216,10 +228,14 @@ bool segaSlider::readSerial() {
       }
       else {
         serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], SLIDER_SERIAL_BUF_SIZE - serialBufWritePos); // read from serialBufWritePos to SLIDER_SERIAL_BUF_SIZE
-        if (serialBufWritePos >= SLIDER_SERIAL_BUF_SIZE)
-        {
-          serialBufWritePos %= SLIDER_SERIAL_BUF_SIZE;
-          serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], serialBufReadPos - serialBufWritePos); // read from serialBufWritePos to serialBufReadPos
+        if (serialBufWritePos >= SLIDER_SERIAL_BUF_SIZE) {
+          if (serialBufReadPos == 0) {
+            serialBufWritePos %= SLIDER_SERIAL_BUF_SIZE;
+          }
+          else {
+            serialBufWritePos %= SLIDER_SERIAL_BUF_SIZE;
+            serialBufWritePos += serialStream->readBytes(&serialInBuf[serialBufWritePos], serialBufReadPos - serialBufWritePos); // read from serialBufWritePos to serialBufReadPos
+          }
         }
       }
       

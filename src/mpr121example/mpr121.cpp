@@ -131,7 +131,7 @@ void mpr121::setElectrodeThresholds(byte electrode, byte count, byte touchThresh
   if (!checkElectrodeNum(electrode, count))
     return;
 
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     writeRegister((mpr121Register)(MPRREG_ELE0_TOUCH_THRESHOLD + (i+electrode)*2), touchThreshold);
     writeRegister((mpr121Register)(MPRREG_ELE0_RELEASE_THRESHOLD + (i+electrode)*2), touchThreshold);
   }
@@ -286,7 +286,7 @@ void mpr121::setPWM(byte pin, byte count, byte value) {
   mpr121Register reg;
   byte regVal;
 
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     if (i == 0 || (pin + i) % 2 == 0) { // if just starting of moving to a new register's start
       reg = MPRREG_PWM_DUTY_0 + (pin + i)/2;
       regVal = readRegister(reg);
@@ -367,7 +367,7 @@ mpr121::mpr121(byte addr, TwoWire *wire)
   FDLfallingProx = 0x80;
   FDLtouchedProx = 0x00;
 
-  for (int i = 0; i < 13; i++)
+  for (byte i = 0; i < 13; i++)
   {
     touchThresholds[i] = 0x0f;
     releaseThresholds[i] = 0x0a;
@@ -496,7 +496,7 @@ short* mpr121::readElectrodeData(byte electrode, byte count) {
 
   byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_FILTERED_DATA_LSB + electrode*2), count*2);
 
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     electrodeDataBuf[electrode + i] = rawdata[i*2] | ((rawdata[i*2 + 1] & 0b00000011) << 8);
   }
 
@@ -510,7 +510,7 @@ byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
 
   byte* rawdata = readRegister((mpr121Register)(MPRREG_ELE0_BASELINE + electrode), count);
 
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     electrodeBaselineBuf[electrode + i] = rawdata[i];
   }
 
@@ -522,7 +522,7 @@ void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
   if (!checkElectrodeNum(electrode, count))
     return;
 
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     writeRegister((mpr121Register)(MPRREG_ELE0_BASELINE + (i+electrode)), value);
   }
 }
@@ -534,7 +534,7 @@ void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
   if (prox)
     maxElectrode = 12;
 
-  for (int i = 0; i <= maxElectrode; i++) {
+  for (byte i = 0; i <= maxElectrode; i++) {
     touchThresholds[i] = touched;
     releaseThresholds[i] = released;
   }
@@ -554,7 +554,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   byte enableByte = readRegister(MPRREG_GPIO_ENABLE);
 
   // disable the modified outputs while changing stuff around
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitClear(enableByte, pin + i);
   }
   writeRegister(MPRREG_GPIO_ENABLE, enableByte);
@@ -569,7 +569,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   // set direction
   tempByte = readRegister(MPRREG_GPIO_DIRECTION);
   tempVal = bitRead(mode, 2);
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitWrite(tempByte, pin + i, tempVal);
   }
   writeRegister(MPRREG_GPIO_DIRECTION, tempByte);
@@ -577,7 +577,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   // set control 0
   tempByte = readRegister(MPRREG_GPIO_CONTROL_0);
   tempVal = bitRead(mode, 1);
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitWrite(tempByte, pin + i, tempVal);
   }
   writeRegister(MPRREG_GPIO_CONTROL_0, tempByte);
@@ -585,7 +585,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   // set control 1
   tempByte = readRegister(MPRREG_GPIO_CONTROL_1);
   tempVal = bitRead(mode, 0);
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitWrite(tempByte, pin + i, tempVal);
   }
   writeRegister(MPRREG_GPIO_CONTROL_1, tempByte);
@@ -593,7 +593,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
 
   // set enable to final value
   tempVal = bitRead(mode, 3);
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitWrite(enableByte, pin + i, tempVal);
   }
   writeRegister(MPRREG_GPIO_ENABLE, enableByte);
@@ -615,7 +615,7 @@ void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
   mpr121Register reg = value ? MPRREG_GPIO_DATA_SET : MPRREG_GPIO_DATA_CLEAR;
 
   byte tempByte = 0;
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitSet(tempByte, pin + i);
   }
   writeRegister(reg, tempByte);
@@ -640,7 +640,7 @@ void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
   mpr121Register reg = value == 0 ? MPRREG_GPIO_DATA_CLEAR : MPRREG_GPIO_DATA_SET;
 
   byte tempByte = 0;
-  for (int i = 0; i < count; i++) {
+  for (byte i = 0; i < count; i++) {
     bitSet(tempByte, pin + i);
   }
   writeRegister(reg, tempByte);
@@ -684,7 +684,7 @@ void mpr121::startMPR(byte electrodes) {
   setNCLProx(NCLrisingProx, NCLfallingProx, NCLtouchedProx);
   setFDLProx(FDLrisingProx, FDLfallingProx, FDLtouchedProx);
   
-  for (int i = 0; i < 13; i++)
+  for (byte i = 0; i < 13; i++)
   {
     mpr121::setElectrodeThresholds(i, touchThresholds[i], releaseThresholds[i]);
   }

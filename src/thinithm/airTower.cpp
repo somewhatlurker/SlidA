@@ -182,7 +182,7 @@ bool airTower::checkLevel(byte level) {
 // read whether all air levels have been blocked (returns pointer to an array of bools)
 bool* airTower::checkAll() {
   static bool buf[6];
-  for (int i = 0; i < 6; i++) {
+  for (byte i = 0; i < 6; i++) {
     buf[i] = checkLevel(i);
   }
   return buf;
@@ -196,7 +196,7 @@ void airTower::calibrate(byte samples, byte offset) {
   if (offset == 0) {
     // reset averages, baselines, and thresholds
     // actually completely unnecessary
-    for (int i = 0; i < 6; i++) {
+    for (byte i = 0; i < 6; i++) {
       averagedVals[i] = 800;
       sensorBaselines[i] = 800;
       sensorThresholds[i] = 100;
@@ -205,7 +205,7 @@ void airTower::calibrate(byte samples, byte offset) {
   
   // find baseline values for sensor on and save averaged vals
   for (float spl = 1; spl <= samples; spl++) {
-    for (int i = 0; i < 6; i++) {
+    for (byte i = 0; i < 6; i++) {
       int val = readLevelVal(i); // readLevelVal uses LEDs
 
       float multiplier = 1 / (spl + offset);
@@ -221,7 +221,7 @@ void airTower::calibrate(byte samples, byte offset) {
   
   // find threshold values for sensor off
   for (float spl = 1; spl <= samples; spl++) {
-    for (int i = 0; i < 6; i++) {
+    for (byte i = 0; i < 6; i++) {
       int val = readSensor(i); // readSensor doesn't use LEDs
       int delta = sensorBaselines[i] - val;
 

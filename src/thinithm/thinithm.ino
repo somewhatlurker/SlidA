@@ -45,7 +45,7 @@ enum errorState : byte {
 };
 errorState operator |(errorState a, errorState b)
 {
-    return static_cast<errorState>(static_cast<int>(a) | static_cast<int>(b));
+    return static_cast<errorState>(static_cast<byte>(a) | static_cast<byte>(b));
 }
 errorState operator |=(errorState &a, errorState b)
 {
@@ -130,7 +130,7 @@ void setup() {
   FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
 
 
-  Serial.setTimeout(0);
+  Serial.setTimeout(1);
   Serial.begin(115200);
   while(!Serial) {} // wait for serial to be ready on USB boards
 }
@@ -140,7 +140,7 @@ bool scanOn = false;
 
 // enable or disable slider and air scanning
 void setScanning(bool on_off) {
-  if (on_off) {
+  if (on_off && !scanOn) {
     scanOn = true;
     #if !FAKE_DATA
       for (mpr121 &mpr : mprs) {
@@ -150,7 +150,7 @@ void setScanning(bool on_off) {
       Keyboard.begin();
     #endif // !FAKE_DATA
   }
-  else {
+  else if (scanOn) {
     scanOn = false;
     #if !FAKE_DATA
       for (mpr121 &mpr : mprs) {
@@ -162,29 +162,26 @@ void setScanning(bool on_off) {
   }
 }
 
-#if FAKE_DATA
-  int curSliderPatternByte; // used for fake test data
-#endif
-
 // perform a slider scan and send it to sliderProtocol
 void doSliderScan() {
   // clear the output buffer
   memset(sliderBuf, 0, sizeof(sliderBuf));
   
   #if FAKE_DATA
+    static byte curSliderPatternByte;
     //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
     curSliderPatternByte = (millis()/30) % 32;
     sliderBuf[curSliderPatternByte] = 0xC0;
   #else // FAKE_DATA
-    static const int numInputTouches = 12 * NUM_MPRS;
+    static const byte numInputTouches = 12 * NUM_MPRS;
     static bool allTouches[numInputTouches];
   
     // read all mpr touches into allTouches
-    for (int i = 0; i < NUM_MPRS; i++) {
+    for (byte i = 0; i < NUM_MPRS; i++) {
       mpr121 &mpr = mprs[i];
       #if MPR121_USE_BITFIELDS
         short touches = mpr.readTouchState();
-        for (int j = 0; j < 12; j++) {
+        for (byte j = 0; j < 12; j++) {
           allTouches[12*i + j] = bitRead(touches, j);
         }
       #else // MPR121_USE_BITFIELDS
@@ -194,9 +191,9 @@ void doSliderScan() {
     }
   
     // apply touch data to output buffer
-    for (int i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-      for (int j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
-        int inputPos = curSliderDef->keyMap[i][j];
+    for (byte i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+      for (byte j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+        byte inputPos = curSliderDef->keyMap[i][j];
   
         if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
           sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
@@ -214,7 +211,7 @@ void doAirScan() {
     static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
     Keyboard.releaseAll();
   
-    for (int i = 0; i < 6; i++) {
+    for (byte i = 0; i < 6; i++) {
       if (airTower.checkLevel(i))
          Keyboard.press(airKeys[i]);
     }
@@ -244,7 +241,9 @@ void loop() {
     sliderPacket pkt;
     byte pktCount = 0;
     while (pktCount < MAX_PACKETS_PER_LOOP) {
+      //Serial.print(String(millis()) + " ");
       pkt = sliderProtocol.readNextPacket();
+      //Serial.println(millis());
       
       if (!pkt.IsValid) {
         // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
@@ -281,6 +280,7 @@ void loop() {
           
         case SLIDER_SCAN_ON:
           setScanning(true);
+          sliderProtocol.sendSliderPacket(scanPacket);
           break; // no response needed
           
         case SLIDER_SCAN_OFF:
@@ -293,10 +293,10 @@ void loop() {
           if (pkt.DataLength > 0) {
             FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
 
-            int maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
+            byte maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
             
-            for (int i = 0; i < curSliderDef->ledCount; i++) {
-              int outputLed = curSliderDef->ledMap[i];
+            for (byte i = 0; i < curSliderDef->ledCount; i++) {
+              byte outputLed = curSliderDef->ledMap[i];
 
               if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
                 if (i < maxPacketLeds) {
@@ -316,6 +316,7 @@ void loop() {
         default:
           emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
           sliderProtocol.sendSliderPacket(emptyPacket);
+          break;
       }
     }
 
@@ -336,7 +337,7 @@ void loop() {
     if ((millis() - lastSerialRecvMillis) < SERIAL_TIMEOUT_MS + 5000) {
       FastLED.setBrightness(RGB_BRIGHTNESS);
 
-      for (int i = 0; i < NUM_SLIDER_LEDS; i++) {
+      for (byte i = 0; i < NUM_SLIDER_LEDS; i++) {
         sliderLeds[i] = CRGB::Black;
       }
       
