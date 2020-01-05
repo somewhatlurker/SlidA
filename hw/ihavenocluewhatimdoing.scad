@@ -20,9 +20,12 @@ wall_height = key_thickness + pcb_thickness + space_thickness;
 full_height = top_thickness + wall_height + bottom_thickness;
 
 slider_height = 136;
-top_width = 470;
-bottom_width = 470;
+top_width = 498;
+bottom_width = 498;
 slider_y_adjust = -9.5;
+
+slider_bevel_x = 44;
+slider_bevel_y = 28;
 
 key_separator_width = 3;
 key_top_bottom_padding = top_thickness;
@@ -240,8 +243,8 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
 
 module slider_cover(width = top_width, height = slider_height, thickness = top_thickness)
 {   
-    bevel_x = 26;
-    bevel_y = 52;
+    bevel_x = slider_bevel_x;
+    bevel_y = slider_bevel_y;
     y_offset = slider_y_adjust;
     
     extra_hole_size = pcb_hole_size + 0.1;
@@ -316,7 +319,7 @@ module wall(width, height, thickness = wall_thickness, tabs_top = top_thickness,
     }
 }
 
-module box_walls(width = top_width - 53, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
+module box_walls(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
 {
     union ()
     {
@@ -345,7 +348,7 @@ module box_walls(width = top_width - 53, depth = slider_height - 7, height = wal
     }
 }
 
-module box_walls_flat(width = top_width - 53, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
+module box_walls_flat(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
 {
     // note that the rear panel isn't moved so that the cutouts are easier
     
@@ -368,6 +371,28 @@ module box_walls_flat(width = top_width - 53, depth = slider_height - 7, height 
         translate ([-width/2 + (depth-thickness*2) * 1.5 + 1, -depth/2, -height_off])
         {
             wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+        }
+    }
+}
+
+module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = slider_height/2, top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = wall_height + top_thickness, thickness = wall_thickness)
+{
+    bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2));
+    //bottom_length = slider_height - slider_bevel_y*2;
+    
+    color("red", 1.0)
+    linear_extrude (height = thickness)
+    union ()
+    {
+        rotate([0, 0, top_angle])
+        translate([0, -top_length])
+        {
+            square([width, top_length]);
+        }
+        square([width, bottom_length]);
+        translate([0, bottom_length])
+        {
+            square([slider_height - slider_bevel_y*2, base_height]);
         }
     }
 }
@@ -714,3 +739,14 @@ projection()
         //slider_2d_walls();
     }
 }
+
+//translate ([213, -104])
+//rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+//air_arm_front();
+
+//translate ([235, -50, -53.7])
+//rotate([90, 0, 90])
+//air_arm_front();
+
+//translate ([230, -104, -300])
+//cube([10, 50, 300]);
