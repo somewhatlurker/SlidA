@@ -25,7 +25,7 @@
 
 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
 // don't make this larger than 255
-#define SLIDER_SERIAL_BUF_SIZE 255
+#define SLIDER_SERIAL_BUF_SIZE 200
 
 // all known valid slider protocol commands (for use in sliderPacket)
 enum sliderCommand {
@@ -63,8 +63,6 @@ private:
   Stream* serialStream;
 
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE]; // ring buf
-  byte serialBufWritePos; // head
-  byte serialBufReadPos; // tail
 
   // some variables are used to convert incoming text to bytes if necessary
   #if SLIDER_SERIAL_TEXT_MODE
@@ -78,27 +76,17 @@ private:
   // verify a packet's checksum is valid
   bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum);
   
-  // read and parse a packet from a ring buffer
-  // invalid packets will have IsValid set to false
-  // datalen is the full buffer size
-  // bufpos is the position to start reading from and will be automatically updated (tail)
-  // can be used with a linear buffer if bufpos is set to 0
-  // maxpos should be set to the end of currently valid data (head)
-  // check for errors using IsValid on the output packet.
-  //   if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-  sliderPacket parseRawSliderData(byte* data, byte datalen, byte &bufpos, byte maxpos);
-  
 public:
   segaSlider(Stream* serial = &Serial);
   
   // sends a complete slider packet (checksum is calculated automatically)
   void sendSliderPacket(const sliderPacket packet);
 
-  // read new any new serial data into the internal buffer
+  // read new serial data into the internal buffer
   // returns whether new data was available
   bool readSerial();
 
-  // returns the next slider packet from the serial buffer
-  // check IsValid to see if all data has been read
-  sliderPacket readNextPacket();
+  // returns the slider packet from the serial buffer
+  // invalid packets will have IsValid set to false
+  sliderPacket getPacket();
 };

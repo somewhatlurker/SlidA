@@ -9,7 +9,7 @@
 
 // disable input scanning and generate fake slider data instead
 // (useful for testing protocol without full hardware)
-#define FAKE_DATA true
+#define FAKE_DATA false
 
 
 // sleep for x microseconds after running the main loop
@@ -130,7 +130,7 @@ void setup() {
   FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
 
 
-  Serial.setTimeout(1);
+  Serial.setTimeout(5);
   Serial.begin(115200);
   while(!Serial) {} // wait for serial to be ready on USB boards
 }
@@ -150,7 +150,7 @@ void setScanning(bool on_off) {
       Keyboard.begin();
     #endif // !FAKE_DATA
   }
-  else if (scanOn) {
+  else if (!on_off && scanOn) {
     scanOn = false;
     #if !FAKE_DATA
       for (mpr121 &mpr : mprs) {
@@ -233,96 +233,86 @@ void loop() {
   curSliderDef = allSliderDefs[curSliderMode];
 
   // check for new slider data
-  // (in an if to save processing if nothing was available)
-  if (sliderProtocol.readSerial()) {
+  byte pktCount = 0;
+  while (pktCount < MAX_PACKETS_PER_LOOP && sliderProtocol.readSerial()) {
     lastSerialRecvMillis = millis();
+    pktCount++;
     
-    // while packets can be read, process them
-    sliderPacket pkt;
-    byte pktCount = 0;
-    while (pktCount < MAX_PACKETS_PER_LOOP) {
-      //Serial.print(String(millis()) + " ");
-      pkt = sliderProtocol.readNextPacket();
-      //Serial.println(millis());
+    sliderPacket pkt = sliderProtocol.getPacket();
       
-      if (!pkt.IsValid) {
-        // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-        // (so if `!=` it was probably a checksum issue)
-        if (pkt.Command != (sliderCommand)0)
-          curError |= ERRORSTATE_PACKET_CHECKSUM;
-        
-        // break on all invalid packets as a precaution against the above check being wrong and somehow detecting end of buffer
-        // (should rarely trigger anyway and it shouldn't matter if some data is lost)
-        break;
-      }
-
-      curError |= ERRORSTATE_PACKET_OK;
-      pktCount++;
-
-      // handle the incoming packet because it was valid
-      switch(pkt.Command) {
-        case SLIDER_BOARDINFO:
-          memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
-          memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
-          sliderProtocol.sendSliderPacket(boardinfoPacket);
-          break;
-
-        case SLIDER_SCAN_REPORT:
-          // there's no way this will give accurate results,
-          // but at least it's implemented on a protocol level now
-          if (!scanOn) {
-            setScanning(true);
-            delay(10);
-            doSliderScan();
-            setScanning(false);
-          }
-          break; // doSliderScan() sends the response
-          
-        case SLIDER_SCAN_ON:
-          setScanning(true);
-          sliderProtocol.sendSliderPacket(scanPacket);
-          break; // no response needed
-          
-        case SLIDER_SCAN_OFF:
-          setScanning(false);
-          emptyPacket.Command = SLIDER_SCAN_OFF;
-          sliderProtocol.sendSliderPacket(emptyPacket);
-          break;
-          
-        case SLIDER_LED:
-          if (pkt.DataLength > 0) {
-            FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
-
-            byte maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
-            
-            for (byte i = 0; i < curSliderDef->ledCount; i++) {
-              byte outputLed = curSliderDef->ledMap[i];
-
-              if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
-                if (i < maxPacketLeds) {
-                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
-                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
-                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
-                }
-                else {
-                  sliderLeds[outputLed] = CRGB::Black;
-                }
-              }
-            }
-            FastLED.show();
-          }
-          break; // no response needed
-          
-        default:
-          emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
-          sliderProtocol.sendSliderPacket(emptyPacket);
-          break;
-      }
+    if (!pkt.IsValid) {
+      // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
+      // (so if `!=` it was probably a checksum issue)
+      if (pkt.Command != (sliderCommand)0)
+        curError |= ERRORSTATE_PACKET_CHECKSUM;
+      
+      continue;
     }
 
-    if (pktCount == MAX_PACKETS_PER_LOOP)
-      curError |= ERRORSTATE_PACKET_MAX_EXCEEDED;
+    curError |= ERRORSTATE_PACKET_OK;
+
+    // handle the incoming packet because it was valid
+    switch(pkt.Command) {
+      case SLIDER_BOARDINFO:
+        memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
+        memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
+        sliderProtocol.sendSliderPacket(boardinfoPacket);
+        break;
+
+      case SLIDER_SCAN_REPORT:
+        // there's no way this will give accurate results,
+        // but at least it's implemented on a protocol level now
+        if (!scanOn) {
+          setScanning(true);
+          delay(10);
+          doSliderScan();
+          setScanning(false);
+        }
+        break; // doSliderScan() sends the response
+        
+      case SLIDER_SCAN_ON:
+        sliderProtocol.sendSliderPacket(scanPacket);
+        setScanning(true);
+        break; // no response needed
+        
+      case SLIDER_SCAN_OFF:
+        setScanning(false);
+        emptyPacket.Command = SLIDER_SCAN_OFF;
+        sliderProtocol.sendSliderPacket(emptyPacket);
+        break;
+        
+      case SLIDER_LED:
+        if (pkt.DataLength > 0) {
+          FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
+
+          byte maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
+          
+          for (byte i = 0; i < curSliderDef->ledCount; i++) {
+            byte outputLed = curSliderDef->ledMap[i];
+
+            if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
+              if (i < maxPacketLeds) {
+                sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
+                sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
+                sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+              }
+              else {
+                sliderLeds[outputLed] = CRGB::Black;
+              }
+            }
+          }
+          FastLED.show();
+        }
+        break; // no response needed
+        
+      default:
+        emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
+        sliderProtocol.sendSliderPacket(emptyPacket);
+        break;
+    }
   }
+  if (pktCount == MAX_PACKETS_PER_LOOP)
+    curError |= ERRORSTATE_PACKET_MAX_EXCEEDED;
 
   // disable scan and set error if serial is dead
   if ((millis() - lastSerialRecvMillis) > SERIAL_TIMEOUT_MS) {
