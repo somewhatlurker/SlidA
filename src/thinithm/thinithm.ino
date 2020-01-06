@@ -236,22 +236,25 @@ void loop() {
   byte pktCount = 0;
   while (pktCount < MAX_PACKETS_PER_LOOP && sliderProtocol.readSerial()) {
     lastSerialRecvMillis = millis();
-    pktCount++;
     
     sliderPacket pkt = sliderProtocol.getPacket();
       
     if (!pkt.IsValid) {
       // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
       // (so if `!=` it was probably a checksum issue)
-      if (pkt.Command == (sliderCommand)0)
+      if (pkt.Command == (sliderCommand)0) {
         break; // no point looping here if there's not enough data
-      else
+      }
+      else {
         curError |= ERRORSTATE_PACKET_CHECKSUM;
+        pktCount++;
+      }
       
       continue;
     }
 
     curError |= ERRORSTATE_PACKET_OK;
+    pktCount++;
 
     // handle the incoming packet because it was valid
     switch(pkt.Command) {

@@ -109,7 +109,8 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
 // read new serial data into the internal buffer
 // returns whether new data was available
 bool segaSlider::readSerial() {
-  if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE)
+  // catch unexpected fault conditions and reset on them
+  if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE || millis() - serialInBufLastWriteMillis > 200)
     serialInBufPos = 0;
   
   bool foundStart = serialInBufPos > 0;
@@ -217,8 +218,10 @@ bool segaSlider::readSerial() {
     
   #endif // SLIDER_SERIAL_TEXT_MODE
 
-  if (wroteData)
+  if (wroteData) {
+    serialInBufLastWriteMillis = millis();
     return true;
+  }
   
   return false;
 }
@@ -238,23 +241,47 @@ sliderPacket segaSlider::getPacket() {
   if (serialInBuf[0] != SLIDER_FRAMING_START)
     return outPkt;
 
+  
   // unescape and copy bytes
-  byte outpos = 0; // define in this scope so it can be checked later
-  for (byte i = 1; i < serialInBufPos && outpos < MAX_SLIDER_PACKET_SIZE; i++)
+  // broken into two loops so up until data length can be read first, then everything else
+  byte inpos = 1;  // define in this scope so it can be used later
+  byte outpos = 0; // define in this scope so it can be used later
+
+  // read until data length
+  for (inpos = 1; inpos < serialInBufPos && outpos < 2; inpos++)
   {
-    if (serialInBuf[i] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
-      i++; // skip SLIDER_FRAMING_ESCAPE
-      if (i == SLIDER_SERIAL_BUF_SIZE) // check data hasn't ended
+    if (serialInBuf[inpos] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
+      inpos++; // skip SLIDER_FRAMING_ESCAPE
+      if (inpos == serialInBufPos) // check data hasn't ended
         break;
-      packetData[outpos] = serialInBuf[i] + 1;
+      packetData[outpos] = serialInBuf[inpos] + 1;
     }
     else {
-      packetData[outpos] = serialInBuf[i];
+      packetData[outpos] = serialInBuf[inpos];
     }
     outpos++;
   }
 
-  outPkt.DataLength = packetData[1];
+  // if outpos isn't what should be expected, or serialInBufPos can't possibly contain enough data, return now
+  // serialInBufPos should contain at least data plus four bytes: framing, command, length, checksum
+  if (outpos != 2 || (outPkt.DataLength = packetData[1], (outPkt.DataLength + 4) > serialInBufPos))
+      return outPkt;
+
+  // finish reading
+  // note that here the outpos max is only plus three bytes because it omits the framing byte
+  for (inpos = inpos; inpos < serialInBufPos && outpos < outPkt.DataLength + 3; inpos++)
+  {
+    if (serialInBuf[inpos] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
+      inpos++; // skip SLIDER_FRAMING_ESCAPE
+      if (inpos == serialInBufPos) // check data hasn't ended
+        break;
+      packetData[outpos] = serialInBuf[inpos] + 1;
+    }
+    else {
+      packetData[outpos] = serialInBuf[inpos];
+    }
+    outpos++;
+  }
 
   if (outpos >= outPkt.DataLength + 3) { // read enough data
     outPkt.Command = (sliderCommand)packetData[0];
