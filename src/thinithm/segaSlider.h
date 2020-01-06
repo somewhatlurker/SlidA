@@ -62,7 +62,8 @@ class segaSlider {
 private:
   Stream* serialStream;
 
-  byte serialInBuf[SLIDER_SERIAL_BUF_SIZE]; // ring buf
+  byte serialInBuf[SLIDER_SERIAL_BUF_SIZE];
+  byte serialInBufPos = 0;
 
   // some variables are used to convert incoming text to bytes if necessary
   #if SLIDER_SERIAL_TEXT_MODE

@@ -109,40 +109,67 @@ void segaSlider::sendSliderPacket(const sliderPacket packet) {
 // read new serial data into the internal buffer
 // returns whether new data was available
 bool segaSlider::readSerial() {
-  byte pos = 0;
-  bool foundFF = false;
-  bool wrote = false;
+  if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE)
+    serialInBufPos = 0;
+  
+  bool foundStart = serialInBufPos > 0;
+  bool wroteData = false;
   
   #if SLIDER_SERIAL_TEXT_MODE
-    static bool alreadyFoundFF = false;    
+    // the start of the next packet may have been found after the last data already
+    // (in here to only trigger when data is actually read)
+    static bool foundStartAfterLast = false;  
+    if(foundStartAfterLast) {
+      foundStart = true;
+      serialInBuf[0] = SLIDER_FRAMING_START;
+      serialInBufPos = 1;
+      foundStartAfterLast = false;
+    }
+      
     // while serial is available, read space separated strings into buffer bytes
-    while (serialStream->available() && pos != SLIDER_SERIAL_BUF_SIZE) {
+    while (serialStream->available() && serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
+
+      /*
+      // the start of the next packet may have been found after the last data already
+      // (in here to only trigger when data is actually read)
+      static bool foundStartAfterLast = false;  
+      if(foundStartAfterLast) {
+        foundStart = true;
+        serialInBuf[0] = SLIDER_FRAMING_START;
+        pos = 1;
+        foundStartAfterLast = false;
+      }
+      */
+      
       if (serialTextReadlen >= sizeof(serialTextBuf) / sizeof(serialTextBuf[0]))
         serialTextReadlen = 0; // reset serialTextBuf pos if it overruns (this shouldn't happen)
-
-      // the start of the next packet may have been found after the last data already
-      if(alreadyFoundFF) {
-        foundFF = true;
-        alreadyFoundFF = false;
-      }
       
       serialTextBuf[serialTextReadlen] = serialStream->read();
-      if (serialTextBuf[serialTextReadlen] == ' ') { // if found a space (end of byte)
-        serialTextBuf[serialTextReadlen] = 0; // null-terminate buffer
+
+      // use space to find end of a "byte"
+      if (serialTextBuf[serialTextReadlen] == ' ') {
+        // null-terminate buffer
+        serialTextBuf[serialTextReadlen] = 0;
+
+        // if the buffer contains data, read it in
         if (serialTextReadlen > 0) {
           serialTextReadlen = 0; // reset serialTextBuf pos
           byte val = atoi(serialTextBuf);
-          if (!foundFF) {
-            if (val == SLIDER_FRAMING_START)
-              foundFF = true;
+          
+          if (!foundStart) {
+            if (val == SLIDER_FRAMING_START) {
+              foundStart = true;
+              serialInBuf[0] = SLIDER_FRAMING_START;
+              serialInBufPos = 1;
+            }
           }
           else if (val == SLIDER_FRAMING_START) {
-            alreadyFoundFF = true;
+            foundStartAfterLast = true;
             break;
           }
           else {
-            serialInBuf[pos++] = val;
-            wrote = true;
+            serialInBuf[serialInBufPos++] = val;
+            wroteData = true;
           }
         }
       }
@@ -152,36 +179,45 @@ bool segaSlider::readSerial() {
     }
     
   #else // SLIDER_SERIAL_TEXT_MODE
+
+    // fast path for no data available
+    if (!serialStream->available())
+      return false;
+    
     unsigned long startMillis = millis();
     
-    while (!foundFF) {
+    while (!foundStart) {
       // find data start
-      if (serialStream->available() && serialStream->read() == SLIDER_FRAMING_START)
-        foundFF = true;
+      if (serialStream->available() && serialStream->read() == SLIDER_FRAMING_START) {
+        foundStart = true;
+        serialInBuf[0] = SLIDER_FRAMING_START;
+        serialInBufPos = 1;
+      }
 
-      // wait 1ms for packet start
+      // wait up to 1ms for packet start
       if (millis() - startMillis > 1)
         break;
     }
-    if (foundFF) {
-      while (pos != SLIDER_SERIAL_BUF_SIZE) {
+    if (foundStart) {
+      while (serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
         if (serialStream->available()) {
+          // break when the start of a new packet is coming
           if (serialStream->peek() == (byte)SLIDER_FRAMING_START)
             break;
             
-          serialInBuf[pos++] = serialStream->read();
-          wrote = true;
+          serialInBuf[serialInBufPos++] = serialStream->read();
+          wroteData = true;
         }
 
-        // absolute max of 20ms from start
-        if (millis() - startMillis > 20)
+        // spend max of 3ms from start waiting
+        if (millis() - startMillis > 3)
           break;
       }
     }
     
   #endif // SLIDER_SERIAL_TEXT_MODE
 
-  if (wrote)
+  if (wroteData)
     return true;
   
   return false;
@@ -197,9 +233,13 @@ sliderPacket segaSlider::getPacket() {
   outPkt.DataLength = 0;
   outPkt.IsValid = false;
 
+  // check if the buffer has been used
+  if (serialInBuf[0] != SLIDER_FRAMING_START)
+    return outPkt;
+
   // unescape and copy bytes
   byte outpos = 0; // define in this scope so it can be checked later
-  for (byte i = 0; i < SLIDER_SERIAL_BUF_SIZE && outpos < MAX_SLIDER_PACKET_SIZE; i++)
+  for (byte i = 1; i < serialInBufPos && outpos < MAX_SLIDER_PACKET_SIZE; i++)
   {
     if (serialInBuf[i] == SLIDER_FRAMING_ESCAPE) { // escaped byte sequence
       i++; // skip SLIDER_FRAMING_ESCAPE
@@ -220,6 +260,11 @@ sliderPacket segaSlider::getPacket() {
     outPkt.Data = &packetData[2];
 
     outPkt.IsValid = checkSliderPacketSum(outPkt, packetData[outPkt.DataLength + 2]);
+
+    // write an empty packet to ensure the buffer definitely gets written to next time
+    memset(serialInBuf, 0, 4);
+
+    serialInBufPos = 0;
   }
   
   return outPkt;

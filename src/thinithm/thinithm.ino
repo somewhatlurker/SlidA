@@ -23,7 +23,7 @@
 #define SERIAL_TIMEOUT_MS 10000
 
 // maximum number of packets to process in one loop
-#define MAX_PACKETS_PER_LOOP 4
+#define MAX_PACKETS_PER_LOOP 3
 
 
 // slider LED vars
@@ -130,7 +130,7 @@ void setup() {
   FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
 
 
-  Serial.setTimeout(5);
+  Serial.setTimeout(0);
   Serial.begin(115200);
   while(!Serial) {} // wait for serial to be ready on USB boards
 }
@@ -192,7 +192,7 @@ void doSliderScan() {
   
     // apply touch data to output buffer
     for (byte i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-      for (byte j = 0; j < SLIDER_BOARDS_INPUT_KEYS_PER_OUTPUT; j++) { // for all inputs that may contribute
+      for (byte j = 0; j < curSliderDef->inputsPerKey; j++) { // for all inputs that may contribute
         byte inputPos = curSliderDef->keyMap[i][j];
   
         if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
