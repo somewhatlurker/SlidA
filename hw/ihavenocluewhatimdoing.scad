@@ -20,8 +20,8 @@ wall_height = key_thickness + pcb_thickness + space_thickness;
 full_height = top_thickness + wall_height + bottom_thickness;
 
 slider_height = 136;
-top_width = 498;
-bottom_width = 498;
+top_width = 500;
+bottom_width = 500;
 slider_y_adjust = -9.5;
 
 slider_bevel_x = 44;
@@ -375,26 +375,176 @@ module box_walls_flat(width = top_width - slider_bevel_x*2, depth = slider_heigh
     }
 }
 
-module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = slider_height/2, top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = wall_height + top_thickness, thickness = wall_thickness)
+module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, screw_hole_size = 3.2)
 {
-    bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2));
-    //bottom_length = slider_height - slider_bevel_y*2;
+    sensor_hole_spacing = top_length*0.7 / 5.75;
+    
+    tab_size = 5;
+    
+    difference()
+    {
+        union ()
+        {
+            rotate([0, 0, top_angle])
+            translate([0, -top_length])
+            {
+                difference()
+                {
+                    square([width, top_length]);
+                    
+                    translate([width/2, sensor_hole_spacing*1.25])
+                    circle(screw_hole_size/2, $fn=hole_resolution);
+                    
+                    translate([width/2, sensor_hole_spacing*5.25])
+                    circle(screw_hole_size/2, $fn=hole_resolution);
+                }
+            }
+            
+            difference()
+            {
+                square([width, bottom_length]);
+                
+                translate([width/2, bottom_length/2])
+                circle(screw_hole_size/2, $fn=hole_resolution);
+            }
+            
+            translate([width, bottom_length])
+            {
+                rotate([0, 0, 10])
+                translate([-width, 0])
+                square([base_length, base_height]);
+            }
+        }
+        
+        translate([width, bottom_length])
+        {
+            rotate([0, 0, 10])
+            translate([-width, -0.1])
+            {
+                translate([tab_size, 0])
+                {
+                    //square([width - tab_size*2, top_thickness + 0.4]);
+                    translate([0, base_height - bottom_thickness - 0.2])
+                    square([width - tab_size*2, bottom_thickness + 0.4]);
+                }
+                
+                translate([width, 0])
+                {
+                    square([base_length - width * 2, top_thickness + 0.4]);
+                    
+                    translate([0, base_height - bottom_thickness - 0.2])
+                    square([base_length - width * 2, bottom_thickness + 0.4]);
+                }
+                
+                translate([base_length - width + tab_size/2, base_height/2])
+                {
+                    circle(screw_hole_size/2, $fn=hole_resolution);
+                }
+                
+                translate([base_length - width + tab_size, 0])
+                {
+                    square([width - tab_size*2, top_thickness + 0.4]);
+                    
+                    translate([0, base_height - bottom_thickness - 0.2])
+                    square([width - tab_size*2, bottom_thickness + 0.4]);
+                }
+            }
+        }
+    }
+}
+
+module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness)
+{
+    sensor_hole_spacing = top_length*0.7 / 5.75;
+    sensor_hole_size = 3.1;
     
     color("red", 1.0)
     linear_extrude (height = thickness)
-    union ()
+    difference()
     {
+        air_arm_shape();
+        
         rotate([0, 0, top_angle])
         translate([0, -top_length])
         {
-            square([width, top_length]);
-        }
-        square([width, bottom_length]);
-        translate([0, bottom_length])
-        {
-            square([slider_height - slider_bevel_y*2, base_height]);
+            for (i=[0:6-1])
+            {
+                translate([width/2, sensor_hole_spacing*(i+0.75)])
+                circle(sensor_hole_size/2, $fn=hole_resolution);
+            }
         }
     }
+}
+
+module air_arm_inner(width = 25, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, thickness = wall_thickness)
+{
+    color("red", 1.0)
+    linear_extrude (height = thickness)
+    difference()
+    {
+        air_arm_shape(screw_hole_size = 5.5);
+        
+        offset(r = -3)
+        air_arm_shape(screw_hole_size = 2);
+        
+        translate([width/2, bottom_length - 1.5])
+        //rotate(10)
+        square([width - 5.6, top_thickness + 13], center=true);
+        
+        translate([base_length - 4, bottom_length + 6 + base_height/2])
+        rotate(10)
+        square([60, base_height - 10], center=true);
+    }
+}
+
+module air_arm_back(thickness = wall_thickness)
+{
+    color("red", 1.0)
+    linear_extrude (height = thickness)
+    air_arm_shape();
+}
+
+module air_arm_full(thickness = wall_thickness)
+{
+    air_arm_front(thickness = thickness);
+    
+    translate([0, 0, thickness])
+    air_arm_inner(thickness = thickness);
+    
+    translate([0, 0, thickness*2])
+    air_arm_inner(thickness = thickness);
+    
+    translate([0, 0, thickness*3])
+    air_arm_inner(thickness = thickness);
+    
+    translate([0, 0, thickness*4])
+    air_arm_inner(thickness = thickness);
+    
+    translate([0, 0, thickness*5])
+    air_arm_back(thickness = thickness);
+}
+
+module air_arm_full_2d(thickness = wall_thickness)
+{
+    offset_x = 38;
+    offset_y = -11;
+    
+    air_arm_front(thickness = thickness);
+    
+    translate([offset_x, offset_y])
+    air_arm_inner(thickness = thickness);
+    
+    translate([offset_x*2, offset_y*2])
+    air_arm_inner(thickness = thickness);
+    
+    translate([offset_x*3, offset_y*3])
+    air_arm_inner(thickness = thickness);
+    
+    translate([offset_x*4, offset_y*4])
+    air_arm_inner(thickness = thickness);
+    
+    translate([offset_x*5, offset_y*5])
+    air_arm_back(thickness = thickness);
 }
 
 module microusb_port(thickness = 26 + wall_thickness)
@@ -740,13 +890,19 @@ projection()
     }
 }
 
-//translate ([213, -104])
-//rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-//air_arm_front();
+/*
+translate ([213, -104, wall_height])
+rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+air_arm_full();
 
-//translate ([235, -50, -53.7])
-//rotate([90, 0, 90])
-//air_arm_front();
+translate ([top_width/2 - 12, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+rotate([90, 10, 90])
+air_arm_full();
+
+translate ([top_width/2 + 12, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+rotate([90, 10, 90])
+air_arm_full_2d();
 
 //translate ([230, -104, -300])
 //cube([10, 50, 300]);
+*/
