@@ -89,5 +89,6 @@ public:
 
   // returns the slider packet from the serial buffer
   // invalid packets will have IsValid set to false
+  //   - if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
   sliderPacket getPacket();
 };

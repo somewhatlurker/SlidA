@@ -41,7 +41,7 @@ enum errorState : byte {
   ERRORSTATE_SERIAL_TIMEOUT = 1, // not receiving serial data (timeout)
   ERRORSTATE_PACKET_CHECKSUM = 2, // at least one invalid packet (due to checksum error) was received
   ERRORSTATE_PACKET_OK = 4, // at least one valid packet was received
-  ERRORSTATE_PACKET_MAX_EXCEEDED = 8, // number of packets exceeded MAX_PACKETS_PER_LOOP
+  ERRORSTATE_PACKET_MAX_REACHED = 8, // number of packets exceeded MAX_PACKETS_PER_LOOP
 };
 errorState operator |(errorState a, errorState b)
 {
@@ -70,7 +70,7 @@ errorState curError;
   #define STATUS_LED_BASIC_2_PIN LED_BUILTIN
 #endif
 
-#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | ERRORSTATE_PACKET_MAX_EXCEEDED)
+#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | ERRORSTATE_PACKET_MAX_REACHED)
 #define STATUS_LED_BASIC_2_ERRORS (ERRORSTATE_PACKET_OK)
 
 
@@ -243,7 +243,9 @@ void loop() {
     if (!pkt.IsValid) {
       // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
       // (so if `!=` it was probably a checksum issue)
-      if (pkt.Command != (sliderCommand)0)
+      if (pkt.Command == (sliderCommand)0)
+        break; // no point looping here if there's not enough data
+      else
         curError |= ERRORSTATE_PACKET_CHECKSUM;
       
       continue;
@@ -312,7 +314,7 @@ void loop() {
     }
   }
   if (pktCount == MAX_PACKETS_PER_LOOP)
-    curError |= ERRORSTATE_PACKET_MAX_EXCEEDED;
+    curError |= ERRORSTATE_PACKET_MAX_REACHED;
 
   // disable scan and set error if serial is dead
   if ((millis() - lastSerialRecvMillis) > SERIAL_TIMEOUT_MS) {
@@ -356,7 +358,7 @@ void loop() {
     
     // if slider touch state has changed (interrupt was triggered), send data
     // also send as a keep alive if slider touch state hasn't changed recently
-    if ( /*(digitalRead(PIN_SLIDER_IRQ) == LOW) ||*/ ((millis() - lastSliderSendMillis) > 50) ) {
+    if ( /*(digitalRead(PIN_SLIDER_IRQ) == LOW) ||*/ ((millis() - lastSliderSendMillis) > 10) ) {
       doSliderScan();
       lastSliderSendMillis = millis();
     }
