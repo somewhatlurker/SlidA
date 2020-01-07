@@ -2,7 +2,8 @@
  * This is an implementation of sega's arcade touch slider protocol,
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
- * Requires a dedicated stream (such as `Serial`) to operate.
+ * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
+ * (Stream with a define changed)
  * 
  * Usage: see thinithm
  * 
@@ -26,6 +27,10 @@
 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
 // don't make this larger than 255
 #define SLIDER_SERIAL_BUF_SIZE 200
+
+// use a Stream instead of Serial_
+// (more portable, but can't handle all host failures well
+#define SLIDER_USE_STREAM false
 
 // all known valid slider protocol commands (for use in sliderPacket)
 enum sliderCommand {
@@ -60,7 +65,11 @@ struct __attribute__((packed)) boardInfo { // packed should be safe because all 
 
 class segaSlider {
 private:
-  Stream* serialStream;
+  #if SLIDER_USE_STREAM
+    Stream* serialStream;
+  #else
+    Serial_* serialStream;
+  #endif
 
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE];
   byte serialInBufPos = 0;
@@ -84,7 +93,11 @@ private:
   #endif // SLIDER_SERIAL_TEXT_MODE 
   
 public:
-  segaSlider(Stream* serial = &Serial);
+  #if SLIDER_USE_STREAM
+    segaSlider(Stream* serial = &Serial);
+  #else
+    segaSlider(Serial_* serial = &Serial);
+  #endif
   
   // sends a complete slider packet (checksum is calculated automatically)
   void sendPacket(const sliderPacket packet);

@@ -2,7 +2,8 @@
  * This is an implementation of sega's arcade touch slider protocol,
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
- * Requires a dedicated stream (such as `Serial`) to operate.
+ * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
+ * (Stream with a define changed)
  * 
  * Usage: see thinithm
  * 
@@ -18,33 +19,66 @@ byte segaSlider::sendEscapedByte(byte data) {
   // escaped bytes are represented as SLIDER_FRAMING_ESCAPE followed by the original byte minus 1
   #if SLIDER_SERIAL_TEXT_MODE
     if (data == SLIDER_FRAMING_ESCAPE) {
-      serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
-      serialStream->write(" ");
-      serialStream->write(String(SLIDER_FRAMING_ESCAPE - 0x1).c_str());
-      serialStream->write(" ");
+      #if !SLIDER_USE_STREAM
+      // make sure a three digit number can be sent in each location
+      if (serialStream->availableForWrite() >= 8)
+      #endif
+      {
+        serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
+        serialStream->write(" ");
+        serialStream->write(String(SLIDER_FRAMING_ESCAPE - 0x1).c_str());
+        serialStream->write(" ");
+      }
     }
     else if (data == SLIDER_FRAMING_START) {
-      serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
-      serialStream->write(" ");
-      serialStream->write(String(SLIDER_FRAMING_START - 0x1).c_str());
-      serialStream->write(" ");
+      #if !SLIDER_USE_STREAM
+      // make sure a three digit number can be sent in each location
+      if (serialStream->availableForWrite() >= 8)
+      #endif
+      {
+        serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
+        serialStream->write(" ");
+        serialStream->write(String(SLIDER_FRAMING_START - 0x1).c_str());
+        serialStream->write(" ");
+      }
     }
     else {
-      serialStream->write(String(data).c_str());
-      serialStream->write(" ");
+      #if !SLIDER_USE_STREAM
+      // make sure a three digit number can be sent
+      if (serialStream->availableForWrite() >= 4)
+      #endif
+      {
+        serialStream->write(String(data).c_str());
+        serialStream->write(" ");
+      }
     }
     
   #else // SLIDER_SERIAL_TEXT_MODE
     if (data == SLIDER_FRAMING_ESCAPE) {
-      serialStream->write(SLIDER_FRAMING_ESCAPE);
-      serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1);
+      #if !SLIDER_USE_STREAM
+      if (serialStream->availableForWrite() >= 2)
+      #endif
+      {
+        serialStream->write(SLIDER_FRAMING_ESCAPE);
+        serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1);
+      }
     }
     else if (data == SLIDER_FRAMING_START) {
-      serialStream->write(SLIDER_FRAMING_ESCAPE);
-      serialStream->write(SLIDER_FRAMING_START - 0x1);
+      #if !SLIDER_USE_STREAM
+      if (serialStream->availableForWrite() >= 2)
+      #endif
+      {
+        serialStream->write(SLIDER_FRAMING_ESCAPE);
+        serialStream->write(SLIDER_FRAMING_START - 0x1);
+      }
     }
     else {
-      serialStream->write(data);
+      #if !SLIDER_USE_STREAM
+      if (serialStream->availableForWrite() >= 1)
+      #endif
+      {
+        serialStream->write(data);
+      }
     }
     
   #endif // SLIDER_SERIAL_TEXT_MODE
@@ -67,12 +101,38 @@ bool segaSlider::checkPacketSum(const sliderPacket packet, byte expectedSum) {
   return checksum == expectedSum;
 }
 
-segaSlider::segaSlider(Stream* serial) {
-  serialStream = serial;
-}
+#if SLIDER_USE_STREAM
+  segaSlider::segaSlider(Stream* serial) {
+    serialStream = serial;
+  }
+#else
+  segaSlider::segaSlider(Serial_* serial) {
+    serialStream = serial;
+  }
+#endif
 
 // sends a complete slider packet (checksum is calculated automatically)
 void segaSlider::sendPacket(const sliderPacket packet) {
+  #if !SLIDER_USE_STREAM
+    unsigned long startMicros = micros();
+    
+    // make sure the host is ready to receive data and there's _probably_ enough space (dropping packets is better than locking)
+    // this will actually be very inaccurate for text mode but whatever
+    #if SLIDER_SERIAL_TEXT_MODE
+      while (serialStream->availableForWrite() < (packet.DataLength + 4) * 3) { // assumes average number length of two digits
+        // spend max of 5ms from start waiting
+        if (micros() - startMicros > 5000)
+          return;
+      }
+    #else // SLIDER_SERIAL_TEXT_MODE
+      while (serialStream->availableForWrite() < packet.DataLength + 4) {
+        // spend max of 5ms from start waiting
+        if (micros() - startMicros > 5000)
+          return;
+      }
+    #endif // SLIDER_SERIAL_TEXT_MODE
+  #endif //!SLIDER_USE_STREAM
+  
   byte checksum = 0;
 
   #if SLIDER_SERIAL_TEXT_MODE
