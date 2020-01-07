@@ -138,6 +138,10 @@ void segaSlider::sendPacket(const sliderPacket packet) {
 // read new serial data into the internal buffer
 // returns whether new data was available
 bool segaSlider::readSerial() {
+  // fast path for no new data
+  if (!serialStream->available())
+    return false;
+  
   // catch unexpected fault conditions and reset on them
   if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE)
     serialInBufPos = 0;
