@@ -12,20 +12,6 @@
 #define FAKE_DATA false
 
 
-// sleep for x microseconds after running the main loop
-#define LOOP_SLEEP_US 1000
-
-// update air readings every x loops
-// (air is less sensitive to timing so can be updated less often if necessary)
-#define AIR_UPDATE_DUTY 1
-
-// time to wait after losing serial connection before disabling scan and LEDs
-#define SERIAL_TIMEOUT_MS 10000
-
-// maximum number of packets to process in one loop
-#define MAX_PACKETS_PER_LOOP 2
-
-
 // slider LED vars
 #define NUM_SLIDER_LEDS 32
 CRGB sliderLeds[NUM_SLIDER_LEDS];
@@ -101,6 +87,31 @@ mpr121 mprs[NUM_MPRS] = { mpr121(0x5a) }; //, mpr121(0x5b), mpr121(0x5c), mpr121
 
 // air tower
 airTower airTower({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1, PIN_AIRSENSOR_2, PIN_AIRSENSOR_3, PIN_AIRSENSOR_4, PIN_AIRSENSOR_5, PIN_AIRSENSOR_6} });
+
+
+// loop timing/processing stuff
+
+// sleep for x microseconds after running the main loop
+// account for LED send timing to achieve 1ms total here
+
+// okay, turns out the block below here is pretty useless because LED_UPDATE_US should be exactly 1000 at 8Mhz so coding in no sleep at all is perfectly reasonable
+// but this should be fine too
+// LED timing stuff is adapted from FastLED's platforms/avr/clockless_trinket.h
+// SK6812's (T1 + T2 + T3) is 20 (6 + 6 + 8) at 16 MHz -- other LEDs are similar
+// 10 cycles must be converted to the equivalent time taken at 16 Mhz (eg. for 8ms it becomes doubled)
+// there's 16 cycles in 1us at 16 MHz
+#define LED_UPDATE_US ((unsigned long)NUM_SLIDER_LEDS * ((unsigned long)480 + ((unsigned long)10 * (unsigned long)16000000 / (unsigned long)F_CPU)) / (unsigned long)16)
+#define LOOP_SLEEP_US (1000 - LED_UPDATE_US)
+
+// update air readings every x loops
+// (air is less sensitive to timing so can be updated less often if necessary)
+#define AIR_UPDATE_DUTY 1
+
+// time to wait after losing serial connection before disabling scan and LEDs
+#define SERIAL_TIMEOUT_MS 10000
+
+// maximum number of packets to process in one loop
+#define MAX_PACKETS_PER_LOOP 2
 
 
 void setup() {
@@ -306,7 +317,7 @@ void loop() {
               }
             }
           }
-          FastLED.show();
+          // FastLED.show();
         }
         break; // no response needed
         
@@ -345,17 +356,20 @@ void loop() {
           break;
       }
 
-      FastLED.show();
+      // FastLED.show();
     }
     else {
       if (sliderLeds[MODE_LED_RGB_INDEX] != (CRGB)CRGB::Black) {
         sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Black;
-        FastLED.show();
+        // FastLED.show();
       }
     }
   }
 
-  
+  // now update LEDs once per loop
+  // done before scanning to reduce delay from receiving to showing
+  FastLED.show();
+
   // if slider scanning is on, update inputs (as appropriate)
   if (scanOn) {
     
@@ -403,5 +417,7 @@ void loop() {
   }
 
   loopCount++;
-  delayMicroseconds(sleepTime);
+
+  if (sleepTime > 0)
+    delayMicroseconds(sleepTime);
 }
