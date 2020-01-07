@@ -405,8 +405,8 @@ void loop() {
     // if slider touch state has changed (interrupt was triggered), send data
     // also send as a keep alive if slider touch state hasn't changed recently
     if ( /*(digitalRead(PIN_SLIDER_IRQ) == LOW) ||*/ ((millis() - lastSliderSendMillis) > 10) ) {
-      doSliderScan();
       lastSliderSendMillis = millis();
+      doSliderScan();
     }
 
     if (curSliderDef->hasAir) {
