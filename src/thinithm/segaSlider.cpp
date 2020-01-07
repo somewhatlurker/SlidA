@@ -187,8 +187,8 @@ bool segaSlider::readSerial() {
       }
     }
 
-    // spend max of 2.5ms from start waiting
-    if (micros() - startMicros > 2500)
+    // spend max of 1.5ms from start waiting
+    if (micros() - startMicros > 1500)
       break;
   }
 

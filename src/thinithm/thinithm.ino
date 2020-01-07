@@ -10,6 +10,17 @@
 // disable input scanning and generate fake slider data instead
 // (useful for testing protocol without full hardware)
 #define FAKE_DATA false
+#define FAKE_DATA_TYPE_CHASE 0
+#define FAKE_DATA_TYPE_PULSE 1
+#define FAKE_DATA_TYPE_TIMERS 2
+#define FAKE_DATA_TYPE FAKE_DATA_TYPE_TIMERS
+
+
+#if FAKE_DATA && FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
+  #include "debugTimer.h"
+  debugTimer loopTimer;
+  debugTimer sendTimer;
+#endif
 
 
 // slider LED vars
@@ -179,10 +190,28 @@ void doSliderScan() {
   memset(sliderBuf, 0, sizeof(sliderBuf));
   
   #if FAKE_DATA
-    static byte curSliderPatternByte;
-    //sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
-    curSliderPatternByte = (millis()/30) % 32;
-    sliderBuf[curSliderPatternByte] = 0xC0;
+    #if FAKE_DATA_TYPE == FAKE_DATA_TYPE_CHASE
+      sliderBuf[(millis()/30) % 32] = 0xC0;
+    #elif FAKE_DATA_TYPE == FAKE_DATA_TYPE_PULSE
+      sliderBuf[0] = (millis() % 1000) < 150 ? 0xC0 : 0x00;
+    #elif FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
+      sendTimer.log();
+      
+      sliderBuf[0] = loopTimer.getMinMillis();
+      sliderBuf[1] = loopTimer.getAverageMillis();
+      sliderBuf[2] = loopTimer.getMaxMillis();
+      
+      sliderBuf[4] = sendTimer.getMinMillis();
+      sliderBuf[5] = sendTimer.getAverageMillis();
+      sliderBuf[6] = sendTimer.getMaxMillis();
+
+      static unsigned long lastResetMillis;
+      if (millis() - lastResetMillis > 3000) {
+        sendTimer.reset();
+        loopTimer.reset();
+        lastResetMillis = millis();
+      }
+    #endif
   #else // FAKE_DATA
     static const byte numInputTouches = 12 * NUM_MPRS;
     static bool allTouches[numInputTouches];
@@ -417,6 +446,10 @@ void loop() {
   }
 
   loopCount++;
+
+  #if FAKE_DATA && FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
+    loopTimer.log();
+  #endif
 
   if (sleepTime > 0)
     delayMicroseconds(sleepTime);
