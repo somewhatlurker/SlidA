@@ -64,7 +64,6 @@ private:
 
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE];
   byte serialInBufPos = 0;
-  unsigned long serialInBufLastWriteMillis;
 
   // some variables are used to convert incoming text to bytes if necessary
   #if SLIDER_SERIAL_TEXT_MODE
@@ -73,16 +72,22 @@ private:
   #endif // SLIDER_SERIAL_TEXT_MODE
   
   // sends a single escaped byte. return value is how much to adjust checksum by
-  byte sendSliderByte(byte data);
+  byte sendEscapedByte(byte data);
 
   // verify a packet's checksum is valid
-  bool checkSliderPacketSum(const sliderPacket packet, byte expectedSum);
+  bool checkPacketSum(const sliderPacket packet, byte expectedSum);
+
+  #if SLIDER_SERIAL_TEXT_MODE 
+    // tries to read a text "byte" from serial
+    // (returns -1 if needs more data)
+    int tryReadSerialTextByte();
+  #endif // SLIDER_SERIAL_TEXT_MODE 
   
 public:
   segaSlider(Stream* serial = &Serial);
   
   // sends a complete slider packet (checksum is calculated automatically)
-  void sendSliderPacket(const sliderPacket packet);
+  void sendPacket(const sliderPacket packet);
 
   // read new serial data into the internal buffer
   // returns whether new data was available

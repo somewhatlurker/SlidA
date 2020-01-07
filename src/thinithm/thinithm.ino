@@ -23,7 +23,7 @@
 #define SERIAL_TIMEOUT_MS 10000
 
 // maximum number of packets to process in one loop
-#define MAX_PACKETS_PER_LOOP 3
+#define MAX_PACKETS_PER_LOOP 2
 
 
 // slider LED vars
@@ -202,7 +202,7 @@ void doSliderScan() {
     }
   #endif // FAKE_DATA
   
-  sliderProtocol.sendSliderPacket(scanPacket);
+  sliderProtocol.sendPacket(scanPacket);
 }
 
 // perform an air sensor scan and send it to Keyboard
@@ -261,7 +261,7 @@ void loop() {
       case SLIDER_BOARDINFO:
         memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
         memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
-        sliderProtocol.sendSliderPacket(boardinfoPacket);
+        sliderProtocol.sendPacket(boardinfoPacket);
         break;
 
       case SLIDER_SCAN_REPORT:
@@ -276,14 +276,14 @@ void loop() {
         break; // doSliderScan() sends the response
         
       case SLIDER_SCAN_ON:
-        sliderProtocol.sendSliderPacket(scanPacket);
+        sliderProtocol.sendPacket(scanPacket);
         setScanning(true);
         break; // no response needed
         
       case SLIDER_SCAN_OFF:
         setScanning(false);
         emptyPacket.Command = SLIDER_SCAN_OFF;
-        sliderProtocol.sendSliderPacket(emptyPacket);
+        sliderProtocol.sendPacket(emptyPacket);
         break;
         
       case SLIDER_LED:
@@ -312,7 +312,7 @@ void loop() {
         
       default:
         emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
-        sliderProtocol.sendSliderPacket(emptyPacket);
+        sliderProtocol.sendPacket(emptyPacket);
         break;
     }
   }
