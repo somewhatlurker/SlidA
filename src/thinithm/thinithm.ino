@@ -188,13 +188,13 @@ void doSliderScan() {
     #elif FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
       sendTimer.log();
       
-      sliderBuf[0] = loopTimer.getMinMillis();
-      sliderBuf[1] = loopTimer.getAverageMillis();
-      sliderBuf[2] = loopTimer.getMaxMillis();
+      sliderBuf[0] = loopTimer.getMinMicros() / 100;
+      sliderBuf[1] = loopTimer.getAverageMicros() / 100;
+      sliderBuf[2] = loopTimer.getMaxMicros() / 100;
       
-      sliderBuf[4] = sendTimer.getMinMillis();
-      sliderBuf[5] = sendTimer.getAverageMillis();
-      sliderBuf[6] = sendTimer.getMaxMillis();
+      sliderBuf[4] = sendTimer.getMinMicros() / 100;
+      sliderBuf[5] = sendTimer.getAverageMicros() / 100;
+      sliderBuf[6] = sendTimer.getMaxMicros() / 100;
 
       static unsigned long lastResetMillis;
       if (millis() - lastResetMillis > 3000) {
