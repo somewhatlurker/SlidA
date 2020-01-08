@@ -3,7 +3,7 @@
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
  * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
- * (Stream with a define changed)
+ * (Stream with a define changed; must support `write`)
  * 
  * Usage: see thinithm
  * 
@@ -17,17 +17,23 @@
 byte segaSlider::sendEscapedByte(byte data) {
   // the special SLIDER_FRAMING_ESCAPE and SLIDER_FRAMING_START values must be escaped
   // escaped bytes are represented as SLIDER_FRAMING_ESCAPE followed by the original byte minus 1
+  
   #if SLIDER_SERIAL_TEXT_MODE
+    static String STR_SPACE = String(" ");
+    static String STR_ESCAPE = String(SLIDER_FRAMING_ESCAPE);
+    static String STR_ESCAPE_SUB1 = String(SLIDER_FRAMING_ESCAPE - 0x1);
+    static String STR_START_SUB1 = String(SLIDER_FRAMING_ESCAPE - 0x1);
+    
     if (data == SLIDER_FRAMING_ESCAPE) {
       #if !SLIDER_USE_STREAM
       // make sure a three digit number can be sent in each location
       if (serialStream->availableForWrite() >= 8)
       #endif
-      {
-        serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
-        serialStream->write(" ");
-        serialStream->write(String(SLIDER_FRAMING_ESCAPE - 0x1).c_str());
-        serialStream->write(" ");
+      {        
+        sendError |= (serialStream->write(STR_ESCAPE.c_str()) != STR_ESCAPE.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
+        sendError |= (serialStream->write(STR_ESCAPE_SUB1.c_str()) != STR_ESCAPE_SUB1.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
       }
     }
     else if (data == SLIDER_FRAMING_START) {
@@ -35,11 +41,11 @@ byte segaSlider::sendEscapedByte(byte data) {
       // make sure a three digit number can be sent in each location
       if (serialStream->availableForWrite() >= 8)
       #endif
-      {
-        serialStream->write(String(SLIDER_FRAMING_ESCAPE).c_str());
-        serialStream->write(" ");
-        serialStream->write(String(SLIDER_FRAMING_START - 0x1).c_str());
-        serialStream->write(" ");
+      {        
+        sendError |= (serialStream->write(STR_ESCAPE.c_str()) != STR_ESCAPE.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
+        sendError |= (serialStream->write(STR_START_SUB1.c_str()) != STR_START_SUB1.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
       }
     }
     else {
@@ -48,8 +54,9 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 4)
       #endif
       {
-        serialStream->write(String(data).c_str());
-        serialStream->write(" ");
+        String dataStr = String(data);
+        sendError |= (serialStream->write(dataStr.c_str()) != dataStr.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
       }
     }
     
@@ -59,8 +66,8 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 2)
       #endif
       {
-        serialStream->write(SLIDER_FRAMING_ESCAPE);
-        serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1);
+        sendError |= (serialStream->write(SLIDER_FRAMING_ESCAPE) != 1);
+        sendError |= (serialStream->write(SLIDER_FRAMING_ESCAPE - 0x1) != 1);
       }
     }
     else if (data == SLIDER_FRAMING_START) {
@@ -68,8 +75,8 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 2)
       #endif
       {
-        serialStream->write(SLIDER_FRAMING_ESCAPE);
-        serialStream->write(SLIDER_FRAMING_START - 0x1);
+        sendError |= (serialStream->write(SLIDER_FRAMING_ESCAPE) != 1);
+        sendError |= (serialStream->write(SLIDER_FRAMING_START - 0x1) != 1);
       }
     }
     else {
@@ -77,7 +84,7 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 1)
       #endif
       {
-        serialStream->write(data);
+        sendError |= (serialStream->write(data) != 1);
       }
     }
     
@@ -99,71 +106,6 @@ bool segaSlider::checkPacketSum(const sliderPacket packet, byte expectedSum) {
   }
 
   return checksum == expectedSum;
-}
-
-#if SLIDER_USE_STREAM
-  segaSlider::segaSlider(Stream* serial) {
-    serialStream = serial;
-  }
-#else
-  segaSlider::segaSlider(Serial_* serial) {
-    serialStream = serial;
-  }
-#endif
-
-// sends a complete slider packet (checksum is calculated automatically)
-void segaSlider::sendPacket(const sliderPacket packet) {
-  #if !SLIDER_USE_STREAM
-    unsigned long startMillis = millis();
-    
-    // make sure the host is ready to receive data and there's _probably_ enough space (dropping packets is better than locking)
-    // this will actually be very inaccurate for text mode but whatever
-    #if SLIDER_SERIAL_TEXT_MODE
-      while (serialStream->availableForWrite() < (packet.DataLength + 4) * 3) { // assumes average number length of two digits
-        // spend max of 5ms from start waiting
-        if (millis() - startMillis >= 5)
-          return;
-      }
-    #else // SLIDER_SERIAL_TEXT_MODE
-      while (serialStream->availableForWrite() < packet.DataLength + 4) {
-        // spend max of 5ms from start waiting
-        if (millis() - startMillis >= 5)
-          return;
-      }
-    #endif // SLIDER_SERIAL_TEXT_MODE
-  #endif //!SLIDER_USE_STREAM
-  
-  byte checksum = 0;
-
-  #if SLIDER_SERIAL_TEXT_MODE
-    serialStream->write(String(SLIDER_FRAMING_START).c_str()); // packet start (should be sent raw)
-    serialStream->write(" ");
-  
-  #else // SLIDER_SERIAL_TEXT_MODE
-    serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
-    
-  #endif // SLIDER_SERIAL_TEXT_MODE
-  
-  checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
-  
-  checksum += sendEscapedByte((byte)packet.Command);
-
-  checksum += sendEscapedByte(packet.DataLength);
-  
-  for (byte i = 0; i < packet.DataLength; i++) {
-    checksum += sendEscapedByte(packet.Data[i]);
-  }
-
-  // invalid packets should have an incorrect checksum
-  // this might be useful for testing
-  if (!packet.IsValid)
-    checksum += 39;
-
-  sendEscapedByte(checksum);
-
-  #if SLIDER_SERIAL_TEXT_MODE
-    serialStream->write("\n");
-  #endif // SLIDER_SERIAL_TEXT_MODE
 }
 
 #if SLIDER_SERIAL_TEXT_MODE 
@@ -254,12 +196,12 @@ bool segaSlider::readSerial() {
       }
     }
     
-    // wait max of 1ms from last received data
-    if (millis() - lastAvailableMillis >= 1)
+    // wait until X ms after last received byte before returning from readSerial
+    if (millis() - lastAvailableMillis >= SLIDER_SERIAL_RECEIVE_TIMEOUT)
       break;
 
-    // wait max of 6ms from start of receiving
-    if (millis() - startMillis >= 6)
+    // wait maximum of X ms from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
+    if (millis() - startMillis >= SLIDER_SERIAL_RECEIVE_MAX_MS)
       break;
   }
 
@@ -269,9 +211,79 @@ bool segaSlider::readSerial() {
   return false;
 }
 
-// returns the slider packet from the serial buffer
+#if SLIDER_USE_STREAM
+  segaSlider::segaSlider(Stream* serial) {
+    serialStream = serial;
+  }
+#else
+  segaSlider::segaSlider(Serial_* serial) {
+    serialStream = serial;
+  }
+#endif
+
+// sends a slider packet (checksum is calculated automatically)
+// returns whether the packet was successfully sent
+bool segaSlider::sendPacket(const sliderPacket packet) {
+  #if !SLIDER_USE_STREAM
+    unsigned long startMillis = millis();
+    
+    // make sure the host is ready to receive data and there's _probably_ enough space (dropping packets is better than locking)
+    // this will actually be very inaccurate for text mode but whatever
+    #if SLIDER_SERIAL_TEXT_MODE
+      while (serialStream->availableForWrite() < (packet.DataLength + 4) * 3) { // assumes average number length of two digits
+        // wait maximum of X ms for there to be enough output capacity to send a packet
+        if (millis() - startMillis >= SLIDER_SERIAL_SEND_WAIT_MS)
+          return false;
+      }
+    #else // SLIDER_SERIAL_TEXT_MODE
+      while (serialStream->availableForWrite() < packet.DataLength + 4) {
+        // wait maximum of X ms for there to be enough output capacity to send a packet
+        if (millis() - startMillis >= SLIDER_SERIAL_SEND_WAIT_MS)
+          return false;
+      }
+    #endif // SLIDER_SERIAL_TEXT_MODE
+  #endif // !SLIDER_USE_STREAM
+  
+  byte checksum = 0;
+  sendError = false;
+
+  #if SLIDER_SERIAL_TEXT_MODE
+    serialStream->write(String(SLIDER_FRAMING_START).c_str()); // packet start (should be sent raw)
+    serialStream->write(" ");
+  #else // SLIDER_SERIAL_TEXT_MODE
+    serialStream->write(SLIDER_FRAMING_START); // packet start (should be sent raw)
+  #endif // SLIDER_SERIAL_TEXT_MODE
+  
+  checksum -= SLIDER_FRAMING_START; // maybe should always be 0xFF..  not sure
+  
+  checksum += sendEscapedByte((byte)packet.Command);
+
+  checksum += sendEscapedByte(packet.DataLength);
+  
+  for (byte i = 0; i < packet.DataLength; i++) {
+    checksum += sendEscapedByte(packet.Data[i]);
+  }
+
+  // invalid packets should have an incorrect checksum
+  // this might be useful for testing
+  if (!packet.IsValid)
+    checksum += 39;
+
+  sendEscapedByte(checksum);
+
+  #if SLIDER_SERIAL_TEXT_MODE
+    serialStream->write("\n");
+  #endif // SLIDER_SERIAL_TEXT_MODE
+
+  if (sendError)
+    return false;
+  else
+    return true;
+}
+
+// read new serial data and return a slider packet from the serial buffer
 // invalid packets will have IsValid set to false
-//   - if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
+// if there was no data or the buffer was incomplete, `Command` will equal `(sliderCommand)0`
 sliderPacket segaSlider::getPacket() {
   static byte packetData[MAX_SLIDER_PACKET_SIZE];
   static sliderPacket outPkt;
@@ -279,6 +291,11 @@ sliderPacket segaSlider::getPacket() {
   outPkt.Command = (sliderCommand)0;
   outPkt.DataLength = 0;
   outPkt.IsValid = false;
+
+  // read serial
+  // if no data was read, return early
+  if (!readSerial())
+    return outPkt;
 
   // check if the buffer has been used
   if (serialInBuf[0] != SLIDER_FRAMING_START)

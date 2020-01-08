@@ -3,7 +3,7 @@
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
  * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
- * (Stream with a define changed)
+ * (Stream with a define changed; must support `write`)
  * 
  * Usage: see thinithm
  * 
@@ -27,6 +27,15 @@
 // pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
 // don't make this larger than 255
 #define SLIDER_SERIAL_BUF_SIZE 200
+
+// wait until X ms after last received byte before returning from readSerial
+#define SLIDER_SERIAL_RECEIVE_TIMEOUT 1
+
+// wait maximum of X ms from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
+#define SLIDER_SERIAL_RECEIVE_MAX_MS 6
+
+// wait maximum of X ms for there to be enough output capacity to send a packet
+#define SLIDER_SERIAL_SEND_WAIT_MS 5
 
 // use a Stream instead of Serial_
 // (more portable, but can't handle all host failures well
@@ -73,6 +82,7 @@ private:
 
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE];
   byte serialInBufPos = 0;
+  bool sendError;
 
   // some variables are used to convert incoming text to bytes if necessary
   #if SLIDER_SERIAL_TEXT_MODE
@@ -91,6 +101,10 @@ private:
     // (returns -1 if needs more data)
     int tryReadSerialTextByte();
   #endif // SLIDER_SERIAL_TEXT_MODE 
+
+  // read new serial data into the internal buffer
+  // returns whether new data was available
+  bool readSerial();
   
 public:
   #if SLIDER_USE_STREAM
@@ -99,12 +113,9 @@ public:
     segaSlider(Serial_* serial = &Serial);
   #endif
   
-  // sends a complete slider packet (checksum is calculated automatically)
-  void sendPacket(const sliderPacket packet);
-
-  // read new serial data into the internal buffer
-  // returns whether new data was available
-  bool readSerial();
+  // sends a slider packet (checksum is calculated automatically)
+  // returns whether the packet was successfully sent
+  bool sendPacket(const sliderPacket packet);
 
   // returns the slider packet from the serial buffer
   // invalid packets will have IsValid set to false

@@ -42,6 +42,7 @@ enum errorState : byte {
   ERRORSTATE_PACKET_CHECKSUM = 2, // at least one invalid packet (due to checksum error) was received
   ERRORSTATE_PACKET_OK = 4, // at least one valid packet was received
   ERRORSTATE_PACKET_MAX_REACHED = 8, // number of packets exceeded MAX_PACKETS_PER_LOOP
+  ERRORSTATE_SERIAL_SEND_FAILURE = 16, // sendPacket returned false
 };
 errorState operator |(errorState a, errorState b)
 {
@@ -70,7 +71,7 @@ errorState curError;
   #define STATUS_LED_BASIC_2_PIN LED_BUILTIN
 #endif
 
-#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | ERRORSTATE_PACKET_MAX_REACHED)
+#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | /*ERRORSTATE_PACKET_MAX_REACHED |*/ ERRORSTATE_SERIAL_SEND_FAILURE)
 #define STATUS_LED_BASIC_2_ERRORS (ERRORSTATE_PACKET_OK)
 
 
@@ -116,7 +117,7 @@ airTower airTower({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1
 #define SERIAL_TIMEOUT_MS 10000
 
 // maximum number of packets to process in one loop
-#define MAX_PACKETS_PER_LOOP 2
+#define MAX_PACKETS_PER_LOOP 1
 
 
 void setup() {
@@ -240,7 +241,8 @@ void doSliderScan() {
     #endif // !FAKE_DATA
   #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   
-  sliderProtocol.sendPacket(scanPacket);
+  if (!sliderProtocol.sendPacket(scanPacket))
+    curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
 }
 
 // perform an air sensor scan and send it to Keyboard
@@ -277,34 +279,34 @@ void loop() {
 
   // check for new slider data
   byte pktCount = 0;
-  while (pktCount < MAX_PACKETS_PER_LOOP && sliderProtocol.readSerial()) {
-    lastSerialRecvMillis = millis();
-    
+  while (pktCount < MAX_PACKETS_PER_LOOP) {
     sliderPacket pkt = sliderProtocol.getPacket();
-      
-    if (!pkt.IsValid) {
-      // if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
-      // (so if `!=` it was probably a checksum issue)
-      if (pkt.Command == (sliderCommand)0) {
-        break; // no point looping here if there's not enough data
-      }
-      else {
-        curError |= ERRORSTATE_PACKET_CHECKSUM;
-        pktCount++;
-      }
-      
+
+    // if there was no data or the buffer was incomplete, `Command` will equal `(sliderCommand)0`
+    // there's no point in looping here if there's no data or not enough data
+    if (pkt.Command == (sliderCommand)0) {
+      break;
+    }
+
+    // increment these when there's any packets, valid or not
+    lastSerialRecvMillis = millis();
+    pktCount++;
+
+    // check if the packet checksum was valid, and skip handling the packet if it wasn't
+    if (pkt.IsValid) {
+      curError |= ERRORSTATE_PACKET_OK;
+    }
+    else {
+      curError |= ERRORSTATE_PACKET_CHECKSUM;
       continue;
     }
 
-    curError |= ERRORSTATE_PACKET_OK;
-    pktCount++;
-
-    // handle the incoming packet because it was valid
     switch(pkt.Command) {
       case SLIDER_BOARDINFO:
         memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
         memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
-        sliderProtocol.sendPacket(boardinfoPacket);
+        if (!sliderProtocol.sendPacket(boardinfoPacket))
+          curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
         break;
 
       case SLIDER_SCAN_REPORT:
@@ -326,7 +328,8 @@ void loop() {
       case SLIDER_SCAN_OFF:
         setScanning(false);
         emptyPacket.Command = SLIDER_SCAN_OFF;
-        sliderProtocol.sendPacket(emptyPacket);
+        if (!sliderProtocol.sendPacket(emptyPacket))
+          curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
         break;
         
       case SLIDER_LED:
@@ -355,7 +358,8 @@ void loop() {
         
       default:
         emptyPacket.Command = pkt.Command; // just blindly acknowledge unknown commands
-        sliderProtocol.sendPacket(emptyPacket);
+        if (!sliderProtocol.sendPacket(emptyPacket))
+          curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
         break;
     }
   }
