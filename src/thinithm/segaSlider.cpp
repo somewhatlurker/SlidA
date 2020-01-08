@@ -114,20 +114,20 @@ bool segaSlider::checkPacketSum(const sliderPacket packet, byte expectedSum) {
 // sends a complete slider packet (checksum is calculated automatically)
 void segaSlider::sendPacket(const sliderPacket packet) {
   #if !SLIDER_USE_STREAM
-    unsigned long startMicros = micros();
+    unsigned long startMillis = millis();
     
     // make sure the host is ready to receive data and there's _probably_ enough space (dropping packets is better than locking)
     // this will actually be very inaccurate for text mode but whatever
     #if SLIDER_SERIAL_TEXT_MODE
       while (serialStream->availableForWrite() < (packet.DataLength + 4) * 3) { // assumes average number length of two digits
         // spend max of 5ms from start waiting
-        if (micros() - startMicros > 5000)
+        if (millis() - startMillis >= 5)
           return;
       }
     #else // SLIDER_SERIAL_TEXT_MODE
       while (serialStream->availableForWrite() < packet.DataLength + 4) {
         // spend max of 5ms from start waiting
-        if (micros() - startMicros > 5000)
+        if (millis() - startMillis >= 5)
           return;
       }
     #endif // SLIDER_SERIAL_TEXT_MODE
@@ -202,14 +202,15 @@ bool segaSlider::readSerial() {
   if (!serialStream->available())
     return false;
   
+  unsigned long startMillis = millis();
+  unsigned long lastAvailableMillis = millis();
+  
   // catch unexpected fault conditions and reset on them
   if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE)
     serialInBufPos = 0;
   
   bool foundStart = serialInBufPos > 0;
   bool wroteData = false;
-
-  unsigned long startMicros = micros();
 
   // the start of the next packet may have been read after the last data already
   static bool foundStartAfterLast = false;  
@@ -219,10 +220,12 @@ bool segaSlider::readSerial() {
     serialInBufPos = 1;
     foundStartAfterLast = false;
   }
-      
+
   // while serial is available, read space separated strings into buffer bytes
   while (serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
-    while (serialStream->available() && serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
+    if (serialStream->available()) {
+      lastAvailableMillis = millis();
+      
       #if SLIDER_SERIAL_TEXT_MODE 
         int val_int = tryReadSerialTextByte();
         if (val_int == -1)
@@ -250,15 +253,14 @@ bool segaSlider::readSerial() {
         wroteData = true;
       }
     }
+    
+    // wait max of 1ms from last received data
+    if (millis() - lastAvailableMillis >= 1)
+      break;
 
-    if (foundStartAfterLast)
+    // wait max of 6ms from start of receiving
+    if (millis() - startMillis >= 6)
       break;
-    
-    // spend max of 2.5ms from start waiting
-    // this only matters when serialStream->available() becomes false
-    if (micros() - startMicros > 2500)
-      break;
-    
   }
 
   if (wroteData)
