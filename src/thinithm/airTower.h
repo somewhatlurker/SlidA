@@ -7,7 +7,7 @@
 #define AIRTOWER_BASELINE_AVERAGING 256
 #define AIRTOWER_THRESHOLD_AVERAGING 128
 #define AIRTOWER_CALIBRATION_SAMPLES 128
-#define AIRTOWER_HOLD_US 150
+#define AIRTOWER_HOLD_US 50 // this should be more than adaquate, in theory
 #define AIRTOWER_THRESHOLD_DIVISOR 3
 
 struct airTowerPins {

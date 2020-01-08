@@ -222,7 +222,7 @@ bool segaSlider::readSerial() {
       
   // while serial is available, read space separated strings into buffer bytes
   while (serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
-    if (serialStream->available()) {
+    while (serialStream->available() && serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
       #if SLIDER_SERIAL_TEXT_MODE 
         int val_int = tryReadSerialTextByte();
         if (val_int == -1)
@@ -251,9 +251,14 @@ bool segaSlider::readSerial() {
       }
     }
 
-    // spend max of 1.5ms from start waiting
-    if (micros() - startMicros > 1500)
+    if (foundStartAfterLast)
       break;
+    
+    // spend max of 2.5ms from start waiting
+    // this only matters when serialStream->available() becomes false
+    if (micros() - startMicros > 2500)
+      break;
+    
   }
 
   if (wroteData)

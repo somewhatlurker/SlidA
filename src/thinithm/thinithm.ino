@@ -10,10 +10,13 @@
 // disable input scanning and generate fake slider data instead
 // (useful for testing protocol without full hardware)
 #define FAKE_DATA false
+
 #define FAKE_DATA_TYPE_CHASE 0
 #define FAKE_DATA_TYPE_PULSE 1
 #define FAKE_DATA_TYPE_TIMERS 2
 #define FAKE_DATA_TYPE FAKE_DATA_TYPE_TIMERS
+
+#define FAKE_DATA_DO_SCANNING true
 
 
 #if FAKE_DATA && FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
@@ -128,7 +131,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
 
 
-  #if !FAKE_DATA
+  #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
     delay(10); // make sure MPR121s have booted
     Wire.begin();
     Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
@@ -136,7 +139,7 @@ void setup() {
       mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
       mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
     }
-  #endif // !FAKE_DATA
+  #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
 
 
   // SK6812 should be WS2812(B) compatible, but FastLED has it natively anyway
@@ -155,23 +158,23 @@ bool scanOn = false;
 void setScanning(bool on_off) {
   if (on_off && !scanOn) {
     scanOn = true;
-    #if !FAKE_DATA
+    #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
       for (mpr121 &mpr : mprs) {
         mpr.startMPR(12);
       }
       airTower.calibrate();
       Keyboard.begin();
-    #endif // !FAKE_DATA
+    #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   }
   else if (!on_off && scanOn) {
     scanOn = false;
-    #if !FAKE_DATA
+    #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
       for (mpr121 &mpr : mprs) {
         mpr.stopMPR();
       }
       Keyboard.releaseAll();
       Keyboard.end();
-    #endif // !FAKE_DATA
+    #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   }
 }
 
@@ -188,13 +191,13 @@ void doSliderScan() {
     #elif FAKE_DATA_TYPE == FAKE_DATA_TYPE_TIMERS
       sendTimer.log();
       
-      sliderBuf[0] = loopTimer.getMinMicros() / 100;
-      sliderBuf[1] = loopTimer.getAverageMicros() / 100;
-      sliderBuf[2] = loopTimer.getMaxMicros() / 100;
+      sliderBuf[0] = loopTimer.getMinMicros() / 1000;
+      sliderBuf[1] = loopTimer.getAverageMicros() / 1000;
+      sliderBuf[2] = loopTimer.getMaxMicros() / 1000;
       
-      sliderBuf[4] = sendTimer.getMinMicros() / 100;
-      sliderBuf[5] = sendTimer.getAverageMicros() / 100;
-      sliderBuf[6] = sendTimer.getMaxMicros() / 100;
+      sliderBuf[4] = sendTimer.getMinMicros() / 1000;
+      sliderBuf[5] = sendTimer.getAverageMicros() / 1000;
+      sliderBuf[6] = sendTimer.getMaxMicros() / 1000;
 
       static unsigned long lastResetMillis;
       if (millis() - lastResetMillis > 3000) {
@@ -203,7 +206,9 @@ void doSliderScan() {
         lastResetMillis = millis();
       }
     #endif
-  #else // FAKE_DATA
+  #endif // FAKE_DATA
+  
+  #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
     static const byte numInputTouches = 12 * NUM_MPRS;
     static bool allTouches[numInputTouches];
   
@@ -220,33 +225,38 @@ void doSliderScan() {
         memcpy(&allTouches[12*i], touches, sizeof(bool[12]));
       #endif // MPR121_USE_BITFIELDS
     }
-  
-    // apply touch data to output buffer
-    for (byte i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-      for (byte j = 0; j < curSliderDef->inputsPerKey; j++) { // for all inputs that may contribute
-        byte inputPos = curSliderDef->keyMap[i][j];
-  
-        if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
-          sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+
+    #if !FAKE_DATA
+      // apply touch data to output buffer
+      for (byte i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+        for (byte j = 0; j < curSliderDef->inputsPerKey; j++) { // for all inputs that may contribute
+          byte inputPos = curSliderDef->keyMap[i][j];
+    
+          if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+            sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
+          }
         }
       }
-    }
-  #endif // FAKE_DATA
+    #endif // !FAKE_DATA
+  #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   
   sliderProtocol.sendPacket(scanPacket);
 }
 
 // perform an air sensor scan and send it to Keyboard
 void doAirScan() {
-  #if !FAKE_DATA
+  #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
     static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
     Keyboard.releaseAll();
   
     for (byte i = 0; i < 6; i++) {
-      if (airTower.checkLevel(i))
-         Keyboard.press(airKeys[i]);
+      if (airTower.checkLevel(i)) {
+        #if !FAKE_DATA
+          Keyboard.press(airKeys[i]);
+        #endif // !FAKE_DATA
+      }
     }
-  #endif // !FAKE_DATA
+  #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
 }
 
 
