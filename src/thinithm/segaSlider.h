@@ -3,7 +3,7 @@
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
  * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
- * (Stream with a define changed; must support `write`)
+ * (Stream with a define changed)
  * 
  * Usage: see thinithm
  * 

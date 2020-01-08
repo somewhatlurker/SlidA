@@ -3,7 +3,7 @@
  * used on Project DIVA Arcade: Future Tone and Chunithm.
  * 
  * Requires a dedicated Serial_ or Stream (such as `Serial`) to operate.
- * (Stream with a define changed; must support `write`)
+ * (Stream with a define changed)
  * 
  * Usage: see thinithm
  * 
@@ -23,6 +23,12 @@ byte segaSlider::sendEscapedByte(byte data) {
     static String STR_ESCAPE = String(SLIDER_FRAMING_ESCAPE);
     static String STR_ESCAPE_SUB1 = String(SLIDER_FRAMING_ESCAPE - 0x1);
     static String STR_START_SUB1 = String(SLIDER_FRAMING_ESCAPE - 0x1);
+
+    // compute lengths ahead of time to ensure strlen won't be called at runtime
+    static byte STR_SPACE_LEN = STR_SPACE.length();
+    static byte STR_ESCAPE_LEN = STR_ESCAPE.length();
+    static byte STR_ESCAPE_SUB1_LEN = STR_ESCAPE_SUB1.length();
+    static byte STR_START_SUB1_LEN = STR_START_SUB1.length();
     
     if (data == SLIDER_FRAMING_ESCAPE) {
       #if !SLIDER_USE_STREAM
@@ -30,10 +36,10 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 8)
       #endif
       {        
-        sendError |= (serialStream->write(STR_ESCAPE.c_str()) != STR_ESCAPE.length());
-        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
-        sendError |= (serialStream->write(STR_ESCAPE_SUB1.c_str()) != STR_ESCAPE_SUB1.length());
-        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
+        sendError |= (serialStream->write(STR_ESCAPE.c_str(), STR_ESCAPE_LEN) != STR_ESCAPE_LEN);
+        sendError |= (serialStream->write(STR_SPACE.c_str(), STR_SPACE_LEN) != STR_SPACE_LEN);
+        sendError |= (serialStream->write(STR_ESCAPE_SUB1.c_str(), STR_ESCAPE_SUB1_LEN) != STR_ESCAPE_SUB1_LEN);
+        sendError |= (serialStream->write(STR_SPACE.c_str(), STR_SPACE_LEN) != STR_SPACE_LEN);
       }
     }
     else if (data == SLIDER_FRAMING_START) {
@@ -42,10 +48,10 @@ byte segaSlider::sendEscapedByte(byte data) {
       if (serialStream->availableForWrite() >= 8)
       #endif
       {        
-        sendError |= (serialStream->write(STR_ESCAPE.c_str()) != STR_ESCAPE.length());
-        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
-        sendError |= (serialStream->write(STR_START_SUB1.c_str()) != STR_START_SUB1.length());
-        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
+        sendError |= (serialStream->write(STR_ESCAPE.c_str(), STR_ESCAPE_LEN) != STR_ESCAPE_LEN);
+        sendError |= (serialStream->write(STR_SPACE.c_str(), STR_SPACE_LEN) != STR_SPACE_LEN);
+        sendError |= (serialStream->write(STR_START_SUB1.c_str(), STR_START_SUB1_LEN) != STR_START_SUB1_LEN);
+        sendError |= (serialStream->write(STR_SPACE.c_str(), STR_SPACE_LEN) != STR_SPACE_LEN);
       }
     }
     else {
@@ -56,7 +62,7 @@ byte segaSlider::sendEscapedByte(byte data) {
       {
         String dataStr = String(data);
         sendError |= (serialStream->write(dataStr.c_str()) != dataStr.length());
-        sendError |= (serialStream->write(STR_SPACE.c_str()) != STR_SPACE.length());
+        sendError |= (serialStream->write(STR_SPACE.c_str(), STR_SPACE_LEN) != STR_SPACE_LEN);
       }
     }
     
