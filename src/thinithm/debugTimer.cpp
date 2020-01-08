@@ -2,7 +2,7 @@
 
 void debugTimer::reset() {
   lastMicros = 0;
-  minMicros = 0;
+  minMicros = (unsigned long)-1; // equal to max value
   maxMicros = 0;
   totalMicros = 0;
   nSamples = 0;
