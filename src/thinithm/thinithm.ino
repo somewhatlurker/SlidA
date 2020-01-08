@@ -110,7 +110,7 @@ airTower airTower({ {PIN_AIRLED_1, PIN_AIRLED_2, PIN_AIRLED_3}, {PIN_AIRSENSOR_1
 
 // update air readings every x loops
 // (air is less sensitive to timing so can be updated less often if necessary)
-#define AIR_UPDATE_DUTY 1
+#define AIR_UPDATE_DUTY 2
 
 // time to wait after losing serial connection before disabling scan and LEDs
 #define SERIAL_TIMEOUT_MS 10000
