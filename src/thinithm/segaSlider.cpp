@@ -143,11 +143,30 @@ bool segaSlider::checkPacketSum(const sliderPacket packet, byte expectedSum) {
   }
 #endif // SLIDER_SERIAL_TEXT_MODE 
 
+// check for serialStream->available() to be true
+// (or an equivalent function)
+bool segaSlider::checkReadAvailable() {
+  #if SLIDER_SERIAL_RECEIVE_CHECK_RWAL
+    // pieced together from parts of USBCore.cpp
+    // hopefully it's fine
+    byte _sreg = SREG; // store SREG
+    cli(); // disable interrupts
+    UENUM = (CDC_RX & 7); // select endpoint
+    bool res = UEINTX & (1<<RWAL); // get RWAL (read/write allowed flag)
+    SREG = _sreg; // restore SREG
+    return res;
+    
+  #else // SLIDER_SERIAL_RECEIVE_CHECK_RWAL
+    return serialStream->available();
+    
+  #endif // SLIDER_SERIAL_RECEIVE_CHECK_RWAL
+}
+
 // read new serial data into the internal buffer
 // returns whether new data was available
 bool segaSlider::readSerial() {
   // fast path for no new data
-  if (!serialStream->available())
+  if (!checkReadAvailable())
     return false;
   
   unsigned long startMillis = millis();
@@ -171,7 +190,7 @@ bool segaSlider::readSerial() {
 
   // while serial is available, read space separated strings into buffer bytes
   while (serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
-    if (serialStream->available()) {
+    if (checkReadAvailable()) {
       lastAvailableMillis = millis();
       
       #if SLIDER_SERIAL_TEXT_MODE 

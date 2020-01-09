@@ -28,6 +28,13 @@
 // don't make this larger than 255
 #define SLIDER_SERIAL_BUF_SIZE 200
 
+// use a better(?) check for serial being available
+// pro micro only, and a little hacky
+// trying it because of https://github.com/arduino/ArduinoCore-avr/issues/112 mentioning an issue with UEBCLX reading 0 during transfers
+// (I've observed similar, but it's unclear if it's due to the same cause)
+// this seems to do very little so I'll leave it disabled
+#define SLIDER_SERIAL_RECEIVE_CHECK_RWAL false
+
 // wait until X ms after last received byte before returning from readSerial
 #define SLIDER_SERIAL_RECEIVE_TIMEOUT 1
 
@@ -101,6 +108,10 @@ private:
     // (returns -1 if needs more data)
     int tryReadSerialTextByte();
   #endif // SLIDER_SERIAL_TEXT_MODE 
+
+  // check for serialStream->available() to be true
+  // (or an equivalent function)
+  bool checkReadAvailable();
 
   // read new serial data into the internal buffer
   // returns whether new data was available
