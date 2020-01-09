@@ -236,15 +236,9 @@ bool segaSlider::readSerial() {
   return false;
 }
 
-#if SLIDER_USE_STREAM
-  segaSlider::segaSlider(Stream* serial) {
-    serialStream = serial;
-  }
-#else
-  segaSlider::segaSlider(Serial_* serial) {
-    serialStream = serial;
-  }
-#endif
+segaSlider::segaSlider(streamtype* serial) {
+  serialStream = serial;
+}
 
 // sends a slider packet (checksum is calculated automatically)
 // returns whether the packet was successfully sent

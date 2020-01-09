@@ -24,7 +24,9 @@
 
 #define SLIDER_SERIAL_TEXT_MODE false
 
-// pro micro should only have a 64 byte internal buffer, but we can still combine multiple reads into one
+// pro micro ~~should only have a 64 byte internal buffer~~
+//   scratch that, USB CDC behaves differently to I thought and it doesn't really buffer like that...
+//   64 bytes is the endpoint size though
 // don't make this larger than 255
 #define SLIDER_SERIAL_BUF_SIZE 200
 
@@ -44,8 +46,8 @@
 // wait maximum of X ms for there to be enough output capacity to send a packet
 #define SLIDER_SERIAL_SEND_WAIT_MS 5
 
-// use a Stream instead of Serial_
-// (more portable, but can't handle all host failures well
+// use a Stream instead of the platform's serial class
+// more portable (eg. can use on HardwareSerial with USB boards), but can't handle all host failures well
 #define SLIDER_USE_STREAM false
 
 // all known valid slider protocol commands (for use in sliderPacket)
@@ -82,10 +84,22 @@ struct __attribute__((packed)) boardInfo { // packed should be safe because all 
 class segaSlider {
 private:
   #if SLIDER_USE_STREAM
-    Stream* serialStream;
+    typedef Stream streamtype;
   #else
-    Serial_* serialStream;
+    typedef decltype(Serial) streamtype;
+  /*
+  #elif defined(USBCON)
+    typedef Serial_ streamtype;
+  #elif defined(CORE_TEENSY)
+    typedef usb_serial_class streamtype;
+  #elif defined(HAVE_HWSERIAL0)
+    typedef HardwareSerial streamtype;
+  #else
+    #error "Platform serial class unknown"
+  */
   #endif
+  
+  streamtype* serialStream;
 
   byte serialInBuf[SLIDER_SERIAL_BUF_SIZE];
   byte serialInBufPos = 0;
@@ -118,11 +132,7 @@ private:
   bool readSerial();
   
 public:
-  #if SLIDER_USE_STREAM
-    segaSlider(Stream* serial = &Serial);
-  #else
-    segaSlider(Serial_* serial = &Serial);
-  #endif
+  segaSlider(streamtype* serial = &Serial);
   
   // sends a slider packet (checksum is calculated automatically)
   // returns whether the packet was successfully sent
