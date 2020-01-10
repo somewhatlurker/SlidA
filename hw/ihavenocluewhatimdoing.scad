@@ -405,10 +405,10 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
                     {
                         square([width, top_length]);
                         
-                        translate([width/3, sensor_hole_spacing*1.25])
+                        translate([width/2, sensor_hole_spacing*0.35])
                         circle(screw_hole_size/2, $fn=hole_resolution);
                         
-                        translate([width*2/3, sensor_hole_spacing*5.25])
+                        translate([width/3, sensor_hole_spacing*6.5])
                         circle(screw_hole_size/2, $fn=hole_resolution);
                     }
                 }
@@ -417,7 +417,7 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
                 {
                     square([width, bottom_length]);
                     
-                    translate([width/3, bottom_length/2])
+                    translate([width*2/3, bottom_length/2])
                     circle(screw_hole_size/2, $fn=hole_resolution);
                 }
                 
@@ -562,8 +562,8 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
         {
             air_arm_shape(screw_hole_size = 5.5, expand = expand);
             
-            offset(delta = -3.3)
-            air_arm_shape(screw_hole_size = 2.1, expand = expand);
+            offset(delta = -4)
+            air_arm_shape(screw_hole_size = 1.2, expand = expand);
             
             translate([width, bottom_length])
             {
@@ -581,14 +581,21 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
         rotate([0, 0, top_angle])
         translate([0, -top_length])
         {
-            translate([0, sensor_hole_spacing*1.25 - 5.5/2])
-            square([width/3 - 5.5/2, 5.5]);
+            translate([0, sensor_hole_spacing*0.35 - 5.5/2])
+            square([width/2 - 5.5/2, 5.5]);
             
-            translate([width*2/3 + 5.5/2, sensor_hole_spacing*5.25 - 5.5/2])
+            translate([width/2 + 5.5/2, sensor_hole_spacing*0.35 - 5.5/2])
+            square([width/2 - 5.5/2, 5.5]);
+            
+            translate([2, 0])
+            square([width - 4, sensor_hole_spacing*0.35 - 5.5/2]);
+            
+            
+            translate([0, sensor_hole_spacing*6.5 - 5.5/2])
             square([width/3 - 5.5/2, 5.5]);
         }
         
-        translate([0, bottom_length/2 - 5.5/2])
+        translate([width*2/3 + 5.5/2, bottom_length/2 - 5.5/2])
         square([width/3 - 5.5/2, 5.5]);
     }
 }
