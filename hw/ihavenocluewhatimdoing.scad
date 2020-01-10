@@ -570,17 +570,17 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
         {
             air_arm_shape(screw_hole_size = 5.5, expand = expand);
             
-            offset(delta = -4)
-            air_arm_shape(screw_hole_size = 1.2, expand = expand);
+            offset(delta = -4.3)
+            air_arm_shape(screw_hole_size = 0.7, expand = expand);
             
             translate([width, bottom_length])
             {
                 rotate([0, 0, 10])
                 {
-                    translate([-width + base_length - width*1.05 - 8, base_height/2 + 5.5/2 - 2.35])
-                    square([20, base_height/2 - 5.5/2 - 2.25]);
+                    translate([-width + base_length - width*1.05 - 13, base_height/2 + 5.5/2 - 2.35])
+                    square([24, base_height/2 - 5.5/2 - 2.25]);
                     
-                    translate([-width + base_length - width/2 - 2, 4.25])
+                    translate([-width + base_length - width/2 - 5, 4.25])
                     square([base_length, base_height/2 - 5.5/2 - 2.25]);
                 }
             }
