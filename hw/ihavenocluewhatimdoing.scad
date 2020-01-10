@@ -577,12 +577,12 @@ module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_a
         air_arm_shape(expand = expand);
         
         offset(delta=expand)
-        offset(r=1.2, $fn=hole_resolution)
-        offset(delta=-1.2, $fn=hole_resolution)
+        offset(r=1.3, $fn=hole_resolution)
+        offset(delta=-1.3, $fn=hole_resolution)
         rotate([0, 0, top_angle])
         translate([width, -top_length + sensor_hole_spacing * 1.25 - 26/2])
         {
-            polygon([[-2,0], [7.5, 1], [7.5, 25], [-2, 26]]);
+            polygon([[-2,1], [7.5, 0], [7.5, 26], [-2, 25]]);
         }
     }
 }
@@ -821,14 +821,14 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
+            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-            air_arm_back(expand = tab_tolerance*4);
+            air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
             
-            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
+            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
             scale([-1, 1, 1])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-            air_arm_back(expand = tab_tolerance*4);
+            air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
         }
     }
     translate ([0, 0, -top_thickness])
@@ -985,14 +985,14 @@ module slider_2d_walls()
                 }
                 union()
                 {
-                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
+                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-                    air_arm_back(expand = tab_tolerance*4);
+                    air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
                     
-                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
+                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
                     scale([-1, 1, 1])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-                    air_arm_back(expand = tab_tolerance*4);
+                    air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
                 }
             }
         }
