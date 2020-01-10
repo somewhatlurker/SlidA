@@ -576,6 +576,7 @@ module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_a
     union() {
         air_arm_shape(expand = expand);
         
+        offset(delta=expand)
         offset(r=1.2, $fn=hole_resolution)
         offset(delta=-1.2, $fn=hole_resolution)
         rotate([0, 0, top_angle])
@@ -820,14 +821,14 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, top_thickness])
+            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-            air_arm_back(expand = tab_tolerance*3);
+            air_arm_back(expand = tab_tolerance*4);
             
-            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, top_thickness])
+            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
             scale([-1, 1, 1])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-            air_arm_back(expand = tab_tolerance*3);
+            air_arm_back(expand = tab_tolerance*4);
         }
     }
     translate ([0, 0, -top_thickness])
@@ -984,14 +985,14 @@ module slider_2d_walls()
                 }
                 union()
                 {
-                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, top_thickness])
+                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-                    air_arm_back(expand = tab_tolerance*3);
+                    air_arm_back(expand = tab_tolerance*4);
                     
-                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, top_thickness])
+                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*4 + 0.2])
                     scale([-1, 1, 1])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-                    air_arm_back(expand = tab_tolerance*3);
+                    air_arm_back(expand = tab_tolerance*4);
                 }
             }
         }
