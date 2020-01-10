@@ -234,11 +234,19 @@ module slider_keys (width = key_area_width, height = key_area_height, thickness 
     {
         translate ([-width/2 + sep_width + 0.1, -key_height/2 - top_border])
         {
-            square([(key_width + sep_width) * 8 - 0.1, top_border]);
+            square([(key_width + sep_width) * 4 - 0.1, top_border]);
+        }
+        translate ([-width/2 + sep_width + (key_width + sep_width) * 4 + 0.1, -key_height/2 - top_border])
+        {
+            square([(key_width + sep_width) * 4 - 0.1, top_border]);
         }
         translate ([-width/2 + sep_width + (key_width + sep_width) * 8 + 0.1, -key_height/2 - top_border])
         {
-            square([(key_width + sep_width) * 8 - sep_width - 0.2, top_border]);
+            square([(key_width + sep_width) * 4 - 0.1, top_border]);
+        }
+        translate ([-width/2 + sep_width + (key_width + sep_width) * 12 + 0.1, -key_height/2 - top_border])
+        {
+            square([(key_width + sep_width) * 4 - sep_width - 0.2, top_border]);
         }
     }
 }
