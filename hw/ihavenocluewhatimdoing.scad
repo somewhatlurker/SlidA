@@ -541,9 +541,12 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
             translate([width, bottom_length])
             {
                 rotate([0, 0, 10])
-                translate([-width + 3, 3.1])
                 {
-                    square([base_length+10, base_height-6.7]);
+                    translate([-width + base_length - width*1.05 - 8, base_height/2 + 5.5/2 - 0.55])
+                    square([20, base_height/2 - 5.5/2 - 2.55]);
+                    
+                    translate([-width + base_length - width/2 - 2, 2.8])
+                    square([base_length, base_height/2 - 5.5/2 - 2.55]);
                 }
             }
         }
