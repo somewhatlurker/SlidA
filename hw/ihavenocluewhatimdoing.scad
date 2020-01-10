@@ -294,14 +294,16 @@ module slider_cover(width = top_width, height = slider_height, thickness = top_t
 }
 
 
-module wall(width, height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness, tab_count = 3)
+module wall(width, height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness, tab_count = 3, expand = 0)
 {   
     tab_width = width / (tab_count*2);
     
     color ("black", 0.4)
     rotate ([90, 0, 0])
     {
-        linear_extrude (height = thickness)
+        translate([0,0,-expand])
+        linear_extrude (height = thickness + expand*2)
+        offset(delta=expand)
         union ()
         {
             translate ([-width/2, -height/2])
@@ -323,36 +325,36 @@ module wall(width, height, thickness = wall_thickness, tabs_top = top_thickness,
     }
 }
 
-module box_walls(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
+module box_walls(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness, expand = 0)
 {
     union ()
     {
         translate ([0, -depth/2, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7, expand = expand);
         }
         translate ([0, depth/2-thickness, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7, expand = expand);
         }
         translate ([-width/2, -thickness, 0])
         {
             rotate ([0, 0, 90])
             {
-                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom, expand = expand);
             }
         }
         translate ([width/2, -thickness, 0])
         {
             rotate ([0, 0, -90])
             {
-                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+                wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom, expand = expand);
             }
         }
     }
 }
 
-module box_walls_flat(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness)
+module box_walls_flat(width = top_width - slider_bevel_x*2, depth = slider_height - 7, height = wall_height, thickness = wall_thickness, tabs_top = top_thickness, tabs_bottom = bottom_thickness, expand = 0)
 {
     // note that the rear panel isn't moved so that the cutouts are easier
     
@@ -362,29 +364,30 @@ module box_walls_flat(width = top_width - slider_bevel_x*2, depth = slider_heigh
     {
         translate ([0, -depth/2, height_off])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7, expand = expand);
         }
         translate ([0, -depth/2, 0])
         {
-            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7);
+            wall(width, height, thickness, tabs_top, tabs_bottom, tab_count = 7, expand = expand);
         }
         translate ([-width/2 + (depth-thickness*2)/2, -depth/2, -height_off])
         {
-            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom, expand = expand);
         }
         translate ([-width/2 + (depth-thickness*2) * 1.5 + 1, -depth/2, -height_off])
         {
-            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom);
+            wall(depth-thickness*2, height, thickness, tabs_top, tabs_bottom, expand = expand);
         }
     }
 }
 
-module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, screw_hole_size = 3.2)
+module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, screw_hole_size = 3.2, expand = 0)
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     
     tab_size = 5;
     
+    offset(delta=expand)
     union()
     {
         difference()
@@ -446,12 +449,13 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
                         square([base_length - width * 2, bottom_thickness + 0.4]);
                     }
                     
-                    translate([base_length - width*1.05 + tab_size/2, base_height/2])
+                    // ARM BASE HOLES
+                    translate([width*1.6, base_height/2])
                     {
                         circle(screw_hole_size/2, $fn=hole_resolution);
                     }
                     
-                    translate([base_length - tab_size/2, base_height/2])
+                    translate([width*1.6 + width*1.05 - tab_size, base_height/2])
                     {
                         circle(screw_hole_size/2, $fn=hole_resolution);
                     }
@@ -490,16 +494,17 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
     }
 }
 
-module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness)
+module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness, expand = 0)
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     sensor_hole_size = 3.1;
     
     color("red", 1.0)
-    linear_extrude (height = thickness)
+    translate([0,0,-expand])
+    linear_extrude (height = thickness + expand*2)
     difference()
     {
-        air_arm_shape();
+        air_arm_shape(expand = expand);
         
         rotate([0, 0, top_angle])
         translate([0, -top_length])
@@ -513,20 +518,21 @@ module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, top_
     }
 }
 
-module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, thickness = wall_thickness)
+module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, thickness = wall_thickness, expand = 0)
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     
     color("red", 1.0)
-    linear_extrude (height = thickness)
+    translate([0,0,-expand])
+    linear_extrude (height = thickness + expand*2)
     union()
     {
         difference()
         {
-            air_arm_shape(screw_hole_size = 5.5);
+            air_arm_shape(screw_hole_size = 5.5, expand = expand);
             
             offset(delta = -3)
-            air_arm_shape(screw_hole_size = 2);
+            air_arm_shape(screw_hole_size = 2, expand = expand);
             
             translate([width/2, bottom_length - 1.5])
             //rotate(10)
@@ -557,57 +563,58 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
     }
 }
 
-module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness)
+module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness, expand = 0)
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     
     color("red", 1.0)
-    linear_extrude (height = thickness)
+    translate([0,0,-expand])
+    linear_extrude (height = thickness + expand*2)
     union() {
-        air_arm_shape();
+        air_arm_shape(expand = expand);
         
         offset(r=1.2, $fn=hole_resolution)
         offset(delta=-1.2, $fn=hole_resolution)
         rotate([0, 0, top_angle])
         translate([width, -top_length + sensor_hole_spacing * 1.25 - 26/2])
         {
-            polygon([[-2,-2], [7.5, 6], [7.5, 20], [-2, 28]]);
+            polygon([[-2,0], [7.5, 1], [7.5, 25], [-2, 26]]);
         }
     }
 }
 
-module air_arm_full(thickness = wall_thickness)
+module air_arm_full(thickness = wall_thickness, expand = 0)
 {
-    air_arm_front(thickness = thickness + 0.2);
+    air_arm_front(thickness = thickness + 0.2, expand = expand);
     
     translate([0, 0, thickness])
-    air_arm_inner(thickness = thickness * 4 + 0.2);
+    air_arm_inner(thickness = thickness * 4 + 0.2, expand = expand);
     
     translate([0, 0, thickness*5])
-    air_arm_back(thickness = thickness);
+    air_arm_back(thickness = thickness, expand = expand);
 }
 
-module air_arm_full_2d(thickness = wall_thickness)
+module air_arm_full_2d(thickness = wall_thickness, expand = 0)
 {
     offset_x = 38;
     offset_y = -11;
     
-    air_arm_front(thickness = thickness);
+    air_arm_front(thickness = thickness, expand = expand);
     
     translate([offset_x, offset_y])
-    air_arm_inner(thickness = thickness);
+    air_arm_inner(thickness = thickness, expand = expand);
     
     translate([offset_x*2, offset_y*2])
-    air_arm_inner(thickness = thickness);
+    air_arm_inner(thickness = thickness, expand = expand);
     
     translate([offset_x*3, offset_y*3])
-    air_arm_inner(thickness = thickness);
+    air_arm_inner(thickness = thickness, expand = expand);
     
     translate([offset_x*4, offset_y*4])
-    air_arm_inner(thickness = thickness);
+    air_arm_inner(thickness = thickness, expand = expand);
     
     translate([offset_x*5, offset_y*5])
-    air_arm_back(thickness = thickness);
+    air_arm_back(thickness = thickness, expand = expand);
 }
 
 module microusb_port(thickness = 26 + wall_thickness)
@@ -713,28 +720,20 @@ module slider_3d()
         }
         translate ([0, slider_y_adjust + wall_thickness, 1])
         {
-            minkowski()
-            {
-                box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0);
-                cube(tab_tolerance*2, center = true);
-            }
+            box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0, expand = tab_tolerance);
         }
         
-        minkowski()
+        union()
         {
-            union()
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            rotate([90, 10, 90])
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                rotate([90, 10, 90])
-                {
-                    air_arm_back(thickness = 13.1);
-                }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                rotate([90, 10, 90])
-                {
-                    air_arm_back(thickness = 13.1);
-                }
-                cube(tab_tolerance*8, center = true);
+                air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
+            }
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            rotate([90, 10, 90])
+            {
+                air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
         }
     }
@@ -764,11 +763,7 @@ module slider_3d()
         }
         translate ([0, slider_y_adjust + wall_thickness, wall_height - 1])
         {
-            minkowski()
-            {
-                box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2);
-                cube(tab_tolerance*2, center = true);
-            }
+            box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2, expand = tab_tolerance);
         }
         translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
         {
@@ -778,21 +773,17 @@ module slider_3d()
             }
         }
         
-        minkowski()
+        union()
         {
-            union()
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            rotate([90, 10, 90])
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                rotate([90, 10, 90])
-                {
-                    air_arm_back(thickness = 13.1);
-                }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                rotate([90, 10, 90])
-                {
-                    air_arm_back(thickness = 13.1);
-                }
-                cube(tab_tolerance*8, center = true);
+                air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
+            }
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            rotate([90, 10, 90])
+            {
+                air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
         }
     }
@@ -823,6 +814,18 @@ module slider_3d()
                 tact_hole();
             }
         }
+        
+        union()
+        {
+            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, top_thickness])
+            rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+            air_arm_back(expand = tab_tolerance*3);
+            
+            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, top_thickness])
+            scale([-1, 1, 1])
+            rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+            air_arm_back(expand = tab_tolerance*3);
+        }
     }
     translate ([0, 0, -top_thickness])
     {
@@ -850,6 +853,15 @@ module slider_3d()
             tact_hole();
         }
     }
+    
+    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_height])
+    scale([-1, 1, 1])
+    rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+    air_arm_full();
+
+    translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+    rotate([90, 10, 90])
+    air_arm_full();
 }
 
 module slider_2d_keys()
@@ -869,28 +881,20 @@ module slider_2d_top()
             }
             translate ([0, slider_y_adjust + wall_thickness, 1])
             {
-                minkowski()
-                {
-                    box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0);
-                    cube(tab_tolerance*2, center = true);
-                }
+                box_walls(height = 0, tabs_top = top_thickness + 2, tabs_bottom = 0, expand = tab_tolerance);
             }
             
-            minkowski()
+            union()
             {
-                union()
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                rotate([90, 10, 90])
                 {
-                    translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                    rotate([90, 10, 90])
-                    {
-                        air_arm_back(thickness = 13.1);
-                    }
-                    translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                    rotate([90, 10, 90])
-                    {
-                        air_arm_back(thickness = 13.1);
-                    }
-                    cube(tab_tolerance*8, center = true);
+                    air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
+                }
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                rotate([90, 10, 90])
+                {
+                    air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
             }
         }
@@ -915,11 +919,7 @@ module slider_2d_bottom()
             }
             translate ([0, slider_y_adjust + wall_thickness, wall_height - 1])
             {
-                minkowski()
-                {
-                    box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2);
-                    cube(tab_tolerance*2, center = true);
-                }
+                box_walls(height = 0, tabs_top = 0, tabs_bottom = bottom_thickness + 2, expand = tab_tolerance);
             }
             translate ([-105, -slider_height/2 + slider_y_adjust - wall_thickness + 11, wall_height - 3.2])
             {
@@ -929,21 +929,17 @@ module slider_2d_bottom()
                 }
             }
             
-            minkowski()
+            union()
             {
-                union()
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                rotate([90, 10, 90])
                 {
-                    translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                    rotate([90, 10, 90])
-                    {
-                        air_arm_back(thickness = 13.1);
-                    }
-                    translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-                    rotate([90, 10, 90])
-                    {
-                        air_arm_back(thickness = 13.1);
-                    }
-                    cube(tab_tolerance*8, center = true);
+                    air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
+                }
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                rotate([90, 10, 90])
+                {
+                    air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
             }
         }
@@ -982,6 +978,17 @@ module slider_2d_walls()
                     {
                         tact_hole();
                     }
+                }
+                union()
+                {
+                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, top_thickness])
+                    rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+                    air_arm_back(expand = tab_tolerance*3);
+                    
+                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, top_thickness])
+                    scale([-1, 1, 1])
+                    rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
+                    air_arm_back(expand = tab_tolerance*3);
                 }
             }
         }
@@ -1024,15 +1031,6 @@ projection()
         //slider_2d_walls();
     }
 }
-
-
-translate ([214, -104, wall_height])
-rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
-air_arm_full();
-
-translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
-rotate([90, 10, 90])
-air_arm_full();
 
 //translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
 //rotate([90, 10, 90])

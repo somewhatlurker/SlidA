@@ -5,6 +5,10 @@ Most sizes can be adjusted using the Customizer panel. After changing them, pres
 Always make sure there is sufficient clearance for parts, especially the micro USB connector.  
 - These can be seen in the 3D preview if you move the camera inside the model.
 
+Note that due to the design of the air arms, adjusting the slider bevels or making large adjustments to the slider
+height may require substantial changes. Ensuring the holes in the arm bases line up with corresponding slots is very
+crucial. (search for `ARM BASE HOLES` in the source to fudge these a bit)
+
 To generate 2d files for cutting, you need to comment out `slider_3d();` and uncomment the `//slider_2d_***();` lines at
 the bottom of the file (inside the projection block) one-by-one. The resulting projections can be saved as DXF or SVG.  
 Projections will be faster if hole resolution is decreased.
