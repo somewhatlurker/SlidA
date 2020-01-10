@@ -522,7 +522,7 @@ module air_leds(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     sensor_led_size = 3;
-    sensor_led_height = 5.3;
+    sensor_led_height = 5.4;
     
     color("black", 1.0)
     translate([0,0,-(sensor_led_height - thickness) + 1])
@@ -533,12 +533,14 @@ module air_leds(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle
     {
         for (i=[0:6-1])
         {
-            translate([width/2, sensor_hole_spacing*(i+0.75)])
+            translate([width/2, sensor_hole_spacing*(i+0.75), sensor_led_size/2])
             {
-                linear_extrude (height = sensor_led_height)
+                sphere(sensor_led_size/2, $fn=hole_resolution);
+                
+                linear_extrude (height = sensor_led_height - sensor_led_size/2)
                 circle(sensor_led_size/2, $fn=hole_resolution);
                 
-                translate([0, 0, sensor_led_height - 1])
+                translate([0, 0, sensor_led_height - sensor_led_size/2 - 1])
                 linear_extrude (height = 1)
                 circle((sensor_led_size + 0.8)/2, $fn=hole_resolution);
             }
