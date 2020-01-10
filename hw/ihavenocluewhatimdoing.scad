@@ -518,6 +518,35 @@ module air_arm_front(width = 25, top_length = top_width/2 - slider_bevel_x, top_
     }
 }
 
+module air_leds(width = 25, top_length = top_width/2 - slider_bevel_x, top_angle = atan(slider_bevel_y/slider_bevel_x), thickness = wall_thickness)
+{
+    sensor_hole_spacing = top_length*0.7 / 5.75;
+    sensor_led_size = 3;
+    sensor_led_height = 5.3;
+    
+    color("black", 1.0)
+    translate([0,0,-(sensor_led_height - thickness) + 1])
+    union()
+    {        
+    rotate([0, 0, top_angle])
+    translate([0, -top_length])
+    {
+        for (i=[0:6-1])
+        {
+            translate([width/2, sensor_hole_spacing*(i+0.75)])
+            {
+                linear_extrude (height = sensor_led_height)
+                circle(sensor_led_size/2, $fn=hole_resolution);
+                
+                translate([0, 0, sensor_led_height - 1])
+                linear_extrude (height = 1)
+                circle((sensor_led_size + 0.8)/2, $fn=hole_resolution);
+            }
+        }
+    }
+    }
+}
+
 module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bottom_length = sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)), top_angle = atan(slider_bevel_y/slider_bevel_x), base_height = full_height + 0.2, base_length = (slider_height - slider_bevel_y*2) * 0.8, thickness = wall_thickness, expand = 0)
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
@@ -577,8 +606,8 @@ module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_a
         air_arm_shape(expand = expand);
         
         offset(delta=expand)
-        offset(r=1.3, $fn=hole_resolution)
-        offset(delta=-1.3, $fn=hole_resolution)
+        offset(r=1.2, $fn=hole_resolution)
+        offset(delta=-1.2, $fn=hole_resolution)
         rotate([0, 0, top_angle])
         translate([width, -top_length + sensor_hole_spacing * 1.25 - 26/2])
         {
@@ -590,6 +619,7 @@ module air_arm_back(width = 25, top_length = top_width/2 - slider_bevel_x, top_a
 module air_arm_full(thickness = wall_thickness, expand = 0)
 {
     air_arm_front(thickness = thickness + 0.2, expand = expand);
+    air_leds(thickness = thickness);
     
     translate([0, 0, thickness])
     air_arm_inner(thickness = thickness * 4 + 0.2, expand = expand);
@@ -729,12 +759,12 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
-            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -779,12 +809,12 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
-            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -821,11 +851,11 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
+            translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 35, wall_thickness + tab_tolerance*3 + 0.25])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
             air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
             
-            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
+            translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 35, wall_thickness + tab_tolerance*3 + 0.25])
             scale([-1, 1, 1])
             rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
             air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
@@ -858,12 +888,12 @@ module slider_3d()
         }
     }
     
-    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_height])
+    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 35, wall_height])
     scale([-1, 1, 1])
     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
     air_arm_full();
 
-    translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+    translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
     rotate([90, 10, 90])
     air_arm_full();
 }
@@ -890,12 +920,12 @@ module slider_2d_top()
             
             union()
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -935,12 +965,12 @@ module slider_2d_bottom()
             
             union()
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -985,11 +1015,11 @@ module slider_2d_walls()
                 }
                 union()
                 {
-                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
+                    translate ([top_width/2 - slider_bevel_x + 9.3, -slider_height/2 - 35, wall_thickness + tab_tolerance*3 + 0.25])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
                     air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
                     
-                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 36, wall_thickness + tab_tolerance*3 + 0.25])
+                    translate ([-top_width/2 + slider_bevel_x - 9.3, -slider_height/2 - 35, wall_thickness + tab_tolerance*3 + 0.25])
                     scale([-1, 1, 1])
                     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
                     air_arm_back(expand = tab_tolerance*0, thickness = wall_thickness + tab_tolerance*3);
