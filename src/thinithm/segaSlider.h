@@ -20,8 +20,6 @@
 #define SLIDER_FRAMING_START 0xFF
 #define SLIDER_FRAMING_ESCAPE 0xFD
 
-#define MAX_SLIDER_PACKET_SIZE 128 // max expected in practice is 100 (4 + 32*3) for LED data
-
 #define SLIDER_SERIAL_TEXT_MODE false
 
 // pro micro ~~should only have a 64 byte internal buffer~~
@@ -41,7 +39,7 @@
 #define SLIDER_SERIAL_RECEIVE_TIMEOUT 1
 
 // wait maximum of X ms from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
-#define SLIDER_SERIAL_RECEIVE_MAX_MS 6
+#define SLIDER_SERIAL_RECEIVE_MAX_MS 4
 
 // wait maximum of X ms for there to be enough output capacity to send a packet
 #define SLIDER_SERIAL_SEND_WAIT_MS 5
@@ -138,8 +136,9 @@ public:
   // returns whether the packet was successfully sent
   bool sendPacket(const sliderPacket packet);
 
-  // returns the slider packet from the serial buffer
+  // read new serial data and return a slider packet from the serial buffer
   // invalid packets will have IsValid set to false
-  //   - if `Command == (sliderCommand)0` it was probably caused by end of buffer and not corruption
+  // if there was no data or the buffer was incomplete, `Command` will equal `(sliderCommand)0`
+  // the returned packet's data will be replaced when getPacket is called again
   sliderPacket getPacket();
 };
