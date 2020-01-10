@@ -385,7 +385,7 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
 {
     sensor_hole_spacing = top_length*0.7 / 5.75;
     
-    tab_size = 5;
+    tab_size = 5.5;
     
     offset(delta=expand)
     union()
@@ -450,12 +450,12 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
                     }
                     
                     // ARM BASE HOLES
-                    translate([width*1.6, base_height/2])
+                    translate([width*1.59, base_height/2])
                     {
                         circle(screw_hole_size/2, $fn=hole_resolution);
                     }
                     
-                    translate([width*1.6 + width*1.05 - tab_size, base_height/2])
+                    translate([width*1.59 + width*1.06 - tab_size, base_height/2])
                     {
                         circle(screw_hole_size/2, $fn=hole_resolution);
                     }
