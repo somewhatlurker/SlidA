@@ -440,6 +440,15 @@ module air_arm_shape(width = 25, top_length = top_width/2 - slider_bevel_x, bott
             translate([width, bottom_length])
             {
                 rotate([0, 0, 10])
+                translate([-width - 1, 0])
+                //square([8, base_height]);
+                polygon([[0, 0], [-2, -8], [1, 0],
+                         [1, base_height], [0, base_height]]);
+            }
+            
+            translate([width, bottom_length])
+            {
+                rotate([0, 0, 10])
                 translate([-width, -0.1])
                 {
                     translate([tab_size, 0])
@@ -1117,9 +1126,9 @@ projection()
     }
 }
 
-//translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
-//rotate([90, 10, 90])
-//air_arm_full_2d();
+translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
+rotate([90, 10, 90])
+air_arm_full_2d();
 
 //translate ([230, -104, -300])
 //cube([10, 50, 300]);
