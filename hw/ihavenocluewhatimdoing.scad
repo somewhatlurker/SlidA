@@ -590,7 +590,7 @@ module air_arm_inner(width = 25, top_length = top_width/2 - slider_bevel_x, bott
     {
         difference()
         {
-            air_arm_shape(screw_hole_size = 5.5, screw_hole_sides = 6, expand = expand);
+            air_arm_shape(screw_hole_size = 5.4, screw_hole_sides = 6, expand = expand);
             
             offset(delta = -5, $fn = hole_resolution/2)
             air_arm_shape(screw_hole_size = 1, expand = expand);
