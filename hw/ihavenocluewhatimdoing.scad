@@ -20,8 +20,8 @@ wall_height = key_thickness + pcb_thickness + space_thickness;
 full_height = top_thickness + wall_height + bottom_thickness;
 
 slider_height = 136;
-top_width = 500;
-bottom_width = 500;
+top_width = 520;
+bottom_width = 520;
 slider_y_adjust = -9.5;
 
 slider_bevel_x = 44;
