@@ -960,6 +960,11 @@ module slider_2d_top()
     {
         slider_keys (height = 0, top_gap = 0.4, top_border = key_thickness - 0.3, bottom_border = 0);
     }
+    
+    translate ([0, - slider_height/2 + slider_y_adjust - 2 - key_thickness, 0])
+    {
+        slider_keys (height = 0, top_gap = 0.4, top_border = key_thickness - 0.3, bottom_border = 0);
+    }
 }
 
 module slider_2d_bottom()
@@ -1051,9 +1056,27 @@ module slider_2d_walls()
     }
 }
 
+module slider_2d_air()
+{
+    rotate ([0, 0, atan(slider_bevel_y/slider_bevel_x)/2])
+    {
+        translate ([-20*6 - top_width*0.12 - slider_height*2/3, 0, 0])
+        {
+            air_arm_full_2d();
+        }
+        translate ([10*6 + top_width*0.12 + slider_height*2/3, 0, 0])
+        {
+            translate([0, 25*6, 0])
+            rotate([0, 0, atan(slider_bevel_y/slider_bevel_x)*2 - 30])
+            scale([-1, 1, 1])
+            air_arm_full_2d();
+        }
+    }
+}
+
 module slider_2d_full()
 {
-    translate ([0, - key_thickness - 2, 0])
+    translate ([0, - key_thickness*2 - 2, 0])
     {
         slider_2d_keys();
     }
@@ -1068,9 +1091,14 @@ module slider_2d_full()
         slider_2d_bottom();
     }
     
-    translate ([0, -key_area_height/2 - full_height*1 - key_thickness - 7, 0])
+    translate ([0, -key_area_height/2 - full_height*1 - key_thickness*2 - 7, 0])
     {
         slider_2d_walls();
+    }
+    
+    translate ([0, slider_height*2 + 25 + top_width/2, 0])
+    {
+        slider_2d_air();
     }
 }
 
@@ -1085,12 +1113,13 @@ projection()
         //slider_2d_top();
         //slider_2d_bottom();
         //slider_2d_walls();
+        //slider_2d_air();
     }
 }
 
-translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
-rotate([90, 10, 90])
-air_arm_full_2d();
+//translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
+//rotate([90, 10, 90])
+//air_arm_full_2d();
 
 //translate ([230, -104, -300])
 //cube([10, 50, 300]);

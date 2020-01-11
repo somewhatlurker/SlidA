@@ -7,7 +7,8 @@ Always make sure there is sufficient clearance for parts, especially the micro U
 
 Note that due to the design of the air arms, adjusting the slider bevels or making large adjustments to the slider
 height may require substantial changes. Ensuring the holes in the arm bases line up with corresponding slots is very
-crucial. (search for `ARM BASE HOLES` in the source to fudge these a bit)
+crucial (search for `ARM BASE HOLES` in the source to fudge these a bit). The 2D layout may also need adjusting,
+depending on the extent of changes.
 
 To generate 2d files for cutting, you need to comment out `slider_3d();` and uncomment the `//slider_2d_***();` lines at
 the bottom of the file (inside the projection block) one-by-one. The resulting projections can be saved as DXF or SVG.  
