@@ -67,10 +67,16 @@ byte* mpr121::readRegister(mpr121Register addr, byte count) {
   i2cWire->requestFrom(i2cAddr, count, (byte)true); // sendStop is true by defaualt where supported, but setting it guarantees support
 
   byte readnum = 0;
-  while(i2cWire->available() && readnum < count)
+  while (i2cWire->available() && readnum < count)
   {
     i2cReadBuf[readnum] = i2cWire->read();
     readnum++;
+  }
+
+  // if not fully read, clear additional bytes to avoid returning old data
+  for ( ; readnum < count; readnum++)
+  {
+    i2cReadBuf[readnum] = 0;
   }
   
   return i2cReadBuf;
