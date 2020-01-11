@@ -71,6 +71,6 @@ public:
   #if AIRTOWER_USE_ANALOG
     // (re-)calibrate the sensors
     // use offset to continue calibrating after already calibrating a number of samples
-    void airTower::calibrate(byte samples = AIRTOWER_CALIBRATION_SAMPLES, byte offset = 0);
+    void calibrate(byte samples = AIRTOWER_CALIBRATION_SAMPLES, byte offset = 0);
   #endif
 };

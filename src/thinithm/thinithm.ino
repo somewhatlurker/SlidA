@@ -81,7 +81,7 @@ segaSlider sliderProtocol = segaSlider(&Serial);
 
 // slider board type for remapping
 sliderBoardType curSliderMode = SLIDER_TYPE_DIVA;
-sliderDef* curSliderDef = allSliderDefs[curSliderMode];
+const sliderDef* curSliderDef = allSliderDefs[curSliderMode];
 
 
 // slider protocol packets for reuse

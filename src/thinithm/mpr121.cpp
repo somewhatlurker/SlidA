@@ -30,7 +30,6 @@
  * Copyright 2019 somewhatlurker, MIT license
  */
 
-#pragma once
 #include <Arduino.h>
 #include "mpr121.h"
 
@@ -138,7 +137,7 @@ void mpr121::setElectrodeThresholds(byte electrode, byte count, byte touchThresh
 
   for (byte i = 0; i < count; i++) {
     writeRegister((mpr121Register)(MPRREG_ELE0_TOUCH_THRESHOLD + (i+electrode)*2), touchThreshold);
-    writeRegister((mpr121Register)(MPRREG_ELE0_RELEASE_THRESHOLD + (i+electrode)*2), touchThreshold);
+    writeRegister((mpr121Register)(MPRREG_ELE0_RELEASE_THRESHOLD + (i+electrode)*2), releaseThreshold);
   }
 }
 
@@ -272,7 +271,7 @@ void mpr121::setAutoConfig(byte USL, byte LSL, byte TL, mpr121AutoConfigRetry RE
   writeRegister(MPRREG_AUTOCONFIG_USL, USL);
   writeRegister(MPRREG_AUTOCONFIG_LSL, LSL);
   writeRegister(MPRREG_AUTOCONFIG_TL, TL);
-  writeRegister(MPRREG_AUTOCONFIG_CONTROL_0, (FFI << 6) | (RETRY_2 << 4) | (BVA_2 << 2) | ((ARE ? 1 : 0) << 1) | (ARE ? 1 : 0));
+  writeRegister(MPRREG_AUTOCONFIG_CONTROL_0, (FFI << 6) | (RETRY_2 << 4) | (BVA_2 << 2) | ((ARE ? 1 : 0) << 1) | (ACE ? 1 : 0));
 }
 
 
@@ -293,7 +292,7 @@ void mpr121::setPWM(byte pin, byte count, byte value) {
 
   for (byte i = 0; i < count; i++) {
     if (i == 0 || (pin + i) % 2 == 0) { // if just starting of moving to a new register's start
-      reg = MPRREG_PWM_DUTY_0 + (pin + i)/2;
+      reg = (mpr121Register)(MPRREG_PWM_DUTY_0 + (pin + i)/2);
       regVal = readRegister(reg);
     }
     

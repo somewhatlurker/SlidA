@@ -84,7 +84,7 @@ void airTower::changeLed(byte led) {
 
 // read a raw sensor pin
 int airTower::readSensor(byte sensor) {
-  if (sensor < 0 || sensor > 5)
+  if (sensor > 5)
     return 0;
 
   #if AIRTOWER_USE_ANALOG
@@ -146,7 +146,7 @@ airTower::airTower(airTowerPins pinstruct) {
 
 // read whether an air level has been blocked
 bool airTower::checkLevel(byte level) {
-  if (level < 0 || level > 5)
+  if (level > 5)
     return false;
 
   bool result;
