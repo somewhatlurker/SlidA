@@ -45,6 +45,7 @@ void loop() {
         for (int j = 0; j < numElectrodes; j++)
           Serial.print(bitRead(touches, j));
       #else // MPR121_USE_BITFIELDS
+        // you don't actually have to implement code for without bitfields, this is mainly for reference
         bool* touches = mpr.readTouchState();
         for (int j = 0; j < numElectrodes; j++)
           Serial.print(touches[j]);

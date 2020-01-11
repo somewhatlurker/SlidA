@@ -15,17 +15,13 @@
  *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
- *   #if MPR121_USE_BITFIELDS
- *     short touches = mpr.readTouchState();
- *     bool touch0 = bitRead(touches, 0);
- *   #else // MPR121_USE_BITFIELDS
- *     bool* touches = mpr.readTouchState();
- *     bool touch0 = touches[0];
- *   #endif // MPR121_USE_BITFIELDS
+ *   short touches = mpr.readTouchState();
+ *   bool touch0 = bitRead(touches, 0);
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
- *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
- *   (electrodeTouchBuf returned by readTouchState is excepted)
+ *   also note that some result buffers (returned by some functions) are shared between instances to save memory
+ *   process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
+ *   (electrodeTouchBuf, returned by readTouchState, is excepted)
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
  *   
@@ -44,7 +40,11 @@
 #endif
 
 // use bitfields (stored in short) instead electrodeTouchBuf and electrodeOORBuf
-#define MPR121_USE_BITFIELDS false
+#define MPR121_USE_BITFIELDS true
+
+// make some buffers static (shared between instances) to save memory
+#define MPR121_SAVE_MEMORY true
+
 
 class mpr121 {
 private:
@@ -52,13 +52,22 @@ private:
   TwoWire* i2cWire;
 
   static byte i2cReadBuf[MPR121_I2C_BUFLEN];
-  static short electrodeDataBuf[13];
-  static byte electrodeBaselineBuf[13];
-  #if !MPR121_USE_BITFIELDS
-    bool electrodeTouchBuf[13];
-    static bool electrodeOORBuf[15];
-  #endif
-
+  
+  #if MPR121_SAVE_MEMORY
+    static short electrodeDataBuf[13];
+    static byte electrodeBaselineBuf[13];
+    #if !MPR121_USE_BITFIELDS
+      bool electrodeTouchBuf[13];
+      static bool electrodeOORBuf[15];
+    #endif
+  #else // MPR121_SAVE_MEMORY
+    short electrodeDataBuf[13];
+    byte electrodeBaselineBuf[13];
+    #if !MPR121_USE_BITFIELDS
+      bool electrodeTouchBuf[13];
+      bool electrodeOORBuf[15];
+    #endif
+  #endif // MPR121_SAVE_MEMORY
   
   // write a value to an MPR121 register
   void writeRegister(mpr121Register addr, byte value);

@@ -15,17 +15,13 @@
  *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
  *   mpr.startMPR();
  *   
- *   #if MPR121_USE_BITFIELDS
- *     short touches = mpr.readTouchState();
- *     bool touch0 = bitRead(touches, 0);
- *   #else // MPR121_USE_BITFIELDS
- *     bool* touches = mpr.readTouchState();
- *     bool touch0 = touches[0];
- *   #endif // MPR121_USE_BITFIELDS
+ *   short touches = mpr.readTouchState();
+ *   bool touch0 = bitRead(touches, 0);
  *   
  *   reading data isn't thread-safe, but that shouldn't be an issue
- *   also note that some internal buffers (returned by some functions) are shared between instances to save memory
- *   (electrodeTouchBuf returned by readTouchState is excepted)
+ *   also note that some result buffers (returned by some functions) are shared between instances to save memory
+ *   process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
+ *   (electrodeTouchBuf, returned by readTouchState, is excepted)
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
  *   
@@ -39,11 +35,14 @@
 #include "mpr121.h"
 
 byte mpr121::i2cReadBuf[MPR121_I2C_BUFLEN];
-short mpr121::electrodeDataBuf[13];
-byte mpr121::electrodeBaselineBuf[13];
-#if !MPR121_USE_BITFIELDS
-  bool mpr121::electrodeOORBuf[15];
-#endif
+
+#if MPR121_SAVE_MEMORY
+  short mpr121::electrodeDataBuf[13];
+  byte mpr121::electrodeBaselineBuf[13];
+  #if !MPR121_USE_BITFIELDS
+    bool mpr121::electrodeOORBuf[15];
+  #endif
+#endif // MPR121_SAVE_MEMORY
 
 // write a value to an MPR121 register
 void mpr121::writeRegister(mpr121Register addr, byte value) {
