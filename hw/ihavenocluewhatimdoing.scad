@@ -9,7 +9,7 @@ pcb_hole_dist_x = 6.175;
 pcb_hole_dist_y = 3.175;
 pcb_hole_size = 3.1;
 
-top_thickness = 1.5;
+top_thickness = 2;
 key_thickness = 3;
 pcb_thickness = 1.6;
 space_thickness = 8;
@@ -781,12 +781,12 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
-            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -831,12 +831,12 @@ module slider_3d()
         
         union()
         {
-            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
             }
-            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+            translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
             rotate([90, 10, 90])
             {
                 air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -915,7 +915,7 @@ module slider_3d()
     rotate([180, 0, atan(slider_bevel_y/slider_bevel_x) + 90])
     air_arm_full();
 
-    translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+    translate ([top_width/2 - 13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
     rotate([90, 10, 90])
     air_arm_full();
 }
@@ -942,12 +942,12 @@ module slider_2d_top()
             
             union()
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -987,12 +987,12 @@ module slider_2d_bottom()
             
             union()
             {
-                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([top_width/2 -13, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
                 }
-                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+                translate ([-top_width/2 - 0.1, (slider_height - slider_bevel_y*2) * -0.6 - 1, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
                 rotate([90, 10, 90])
                 {
                     air_arm_back(thickness = 13.1, expand = tab_tolerance*4);
@@ -1088,7 +1088,7 @@ projection()
     }
 }
 
-translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 2.5])
+translate ([top_width/2 + 13, (slider_height - slider_bevel_y*2) * -0.6 + 50, sqrt(pow(slider_bevel_x,2) + pow(slider_bevel_y,2)) * -0.98 + 4 - top_thickness])
 rotate([90, 10, 90])
 air_arm_full_2d();
 
