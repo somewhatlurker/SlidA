@@ -31,6 +31,8 @@
 CRGB sliderLeds[NUM_SLIDER_LEDS];
 
 #define RGB_BRIGHTNESS 127
+// 450mA should be unnoticeable up to ~140 brightness, and even then going brighter won't be too bad
+#define RGB_POWER_LIMIT 450
 
 #define MODE_LED_RGB_INDEX NUM_SLIDER_LEDS-1
 
@@ -142,7 +144,10 @@ void setup() {
     }
   #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
 
-
+  
+  // 5V is LED voltage, not arduino voltage
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, RGB_POWER_LIMIT); 
+  
   // SK6812 should be WS2812(B) compatible, but FastLED has it natively anyway
   FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
 
@@ -343,9 +348,17 @@ void loop() {
 
             if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
               if (i < maxPacketLeds) {
-                sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
-                sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
-                sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+                if (outputLed % 2 == 0) {
+                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
+                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
+                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+                }
+                else {
+                  // dim values for separators
+                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1] / 2; // start with + 1 because of brightness byte
+                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2] / 2;
+                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3] / 2;
+                }
               }
               else {
                 sliderLeds[outputLed] = CRGB::Black;
