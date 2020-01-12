@@ -2,81 +2,94 @@
 
 // set which LED should be enabled (-1 for off)
 void airTower::changeLed(byte led) {
+  // make all pins high impedance so they can't be damaged by creating a short, even if it wouldn't last long
+  for (byte i = 0; i < 2; i++) { // lazy way of doing this for both pins
+    pinMode(pins.leds[0][i], INPUT);
+    pinMode(pins.leds[1][i], INPUT);
+    pinMode(pins.leds[2][i], INPUT);
+  }
+  
   for (byte i = 0; i < 2; i++) { // lazy way of doing this for both pins
     switch (led) {
       case 0:
         pinMode(pins.leds[0][i], OUTPUT);
-        pinMode(pins.leds[1][i], OUTPUT);
-        pinMode(pins.leds[2][i], INPUT);
-        
         digitalWrite(pins.leds[0][i], HIGH);
+        
+        pinMode(pins.leds[1][i], OUTPUT);
         digitalWrite(pins.leds[1][i], LOW);
+        
+        pinMode(pins.leds[2][i], INPUT);
         digitalWrite(pins.leds[2][i], LOW);
         
         break;
         
       case 1:
         pinMode(pins.leds[0][i], OUTPUT);
-        pinMode(pins.leds[1][i], OUTPUT);
-        pinMode(pins.leds[2][i], INPUT);
-        
         digitalWrite(pins.leds[0][i], LOW);
+        pinMode(pins.leds[1][i], OUTPUT);
         digitalWrite(pins.leds[1][i], HIGH);
+        
+        pinMode(pins.leds[2][i], INPUT);
         digitalWrite(pins.leds[2][i], LOW);
         
         break;
         
       case 2:
         pinMode(pins.leds[0][i], INPUT);
-        pinMode(pins.leds[1][i], OUTPUT);
-        pinMode(pins.leds[2][i], OUTPUT);
-        
         digitalWrite(pins.leds[0][i], LOW);
+        
+        pinMode(pins.leds[1][i], OUTPUT);
         digitalWrite(pins.leds[1][i], HIGH);
+        
+        pinMode(pins.leds[2][i], OUTPUT);
         digitalWrite(pins.leds[2][i], LOW);
         
         break;
         
       case 3:
         pinMode(pins.leds[0][i], INPUT);
-        pinMode(pins.leds[1][i], OUTPUT);
-        pinMode(pins.leds[2][i], OUTPUT);
-        
         digitalWrite(pins.leds[0][i], LOW);
+        
+        pinMode(pins.leds[1][i], OUTPUT);
         digitalWrite(pins.leds[1][i], LOW);
+        
+        pinMode(pins.leds[2][i], OUTPUT);
         digitalWrite(pins.leds[2][i], HIGH);
         
         break;
         
       case 4:
         pinMode(pins.leds[0][i], OUTPUT);
-        pinMode(pins.leds[1][i], INPUT);
-        pinMode(pins.leds[2][i], OUTPUT);
-        
         digitalWrite(pins.leds[0][i], HIGH);
+        
+        pinMode(pins.leds[1][i], INPUT);
         digitalWrite(pins.leds[1][i], LOW);
+        
+        pinMode(pins.leds[2][i], OUTPUT);
         digitalWrite(pins.leds[2][i], LOW);
         
         break;
         
       case 5:
         pinMode(pins.leds[0][i], OUTPUT);
-        pinMode(pins.leds[1][i], INPUT);
-        pinMode(pins.leds[2][i], OUTPUT);
-        
         digitalWrite(pins.leds[0][i], LOW);
+        
+        pinMode(pins.leds[1][i], INPUT);
         digitalWrite(pins.leds[1][i], LOW);
+        
+        pinMode(pins.leds[2][i], OUTPUT);
         digitalWrite(pins.leds[2][i], HIGH);
         
         break;
         
       default:
         pinMode(pins.leds[0][i], OUTPUT);
-        pinMode(pins.leds[1][i], OUTPUT);
-        pinMode(pins.leds[2][i], OUTPUT);
-        
         digitalWrite(pins.leds[0][i], LOW);
+        
+        pinMode(pins.leds[1][i], OUTPUT);
         digitalWrite(pins.leds[1][i], LOW);
+        
+        pinMode(pins.leds[2][i], OUTPUT);
         digitalWrite(pins.leds[2][i], LOW);
         
         break;
