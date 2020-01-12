@@ -11,7 +11,7 @@
 #define AIRTOWER_THRESHOLD_DIVISOR 3
 
 struct airTowerPins {
-  byte leds[3];
+  byte leds[3][2];
   byte sensors[6];
 };
 
