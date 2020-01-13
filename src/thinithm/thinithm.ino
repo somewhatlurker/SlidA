@@ -219,6 +219,13 @@ void doSliderScan() {
     // read all mpr touches into allTouches
     for (byte i = 0; i < NUM_MPRS; i++) {
       mpr121 &mpr = mprs[i];
+
+      // error condition, should hopefully never be triggered
+      if (!mpr.checkRunning()) {
+        setScanning(false);
+        return;
+      }
+      
       #if MPR121_USE_BITFIELDS
         short touches = mpr.readTouchState();
         for (byte j = 0; j < 12; j++) {
