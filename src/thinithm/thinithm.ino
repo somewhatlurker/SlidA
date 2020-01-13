@@ -45,6 +45,7 @@ enum errorState : byte {
   ERRORSTATE_PACKET_OK = 4, // at least one valid packet was received
   ERRORSTATE_PACKET_MAX_REACHED = 8, // number of packets exceeded MAX_PACKETS_PER_LOOP
   ERRORSTATE_SERIAL_SEND_FAILURE = 16, // sendPacket returned false
+  ERRORSTATE_MPR_STOPPED = 32, // an mpr121 stopped running
 };
 errorState operator |(errorState a, errorState b)
 {
@@ -73,7 +74,7 @@ errorState curError;
   #define STATUS_LED_BASIC_2_PIN LED_BUILTIN
 #endif
 
-#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | /*ERRORSTATE_PACKET_MAX_REACHED |*/ ERRORSTATE_SERIAL_SEND_FAILURE)
+#define STATUS_LED_BASIC_1_ERRORS (ERRORSTATE_SERIAL_TIMEOUT | ERRORSTATE_PACKET_CHECKSUM | /*ERRORSTATE_PACKET_MAX_REACHED |*/ ERRORSTATE_SERIAL_SEND_FAILURE | ERRORSTATE_MPR_STOPPED)
 #define STATUS_LED_BASIC_2_ERRORS (ERRORSTATE_PACKET_OK)
 
 
@@ -222,6 +223,7 @@ void doSliderScan() {
 
       // error condition, should hopefully never be triggered
       if (!mpr.checkRunning()) {
+        curError |= ERRORSTATE_MPR_STOPPED;
         setScanning(false);
         return;
       }
