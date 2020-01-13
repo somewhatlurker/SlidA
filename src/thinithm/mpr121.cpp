@@ -11,9 +11,8 @@
  *   // for 4ms response time (default is 8): mpr.ESI = MPR_ESI_1;
  *   // for better autoconfig: mpr.autoConfigUSL = 256L * (supplyMillivolts - 700) / supplyMillivolts;
  *   
- *   Wire.begin();
- *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
- *   mpr.startMPR();
+ *   mpr121.begin(); // just sets up the Wire lib. mpr121 can run in 400kHz mode. if you have issues with it or want to use 100kHz, use `mpr121.begin(100000)`.
+ *   mpr.start();
  *   
  *   short touches = mpr.readTouchState();
  *   bool touch0 = bitRead(touches, 0);
@@ -24,10 +23,8 @@
  *   (electrodeTouchBuf, returned by readTouchState, is excepted)
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
- *   
- *   make sure to allow some time (10ms should be plenty) for the MPR121 to start
  * 
- * Copyright 2019 somewhatlurker, MIT license
+ * Copyright 2020 somewhatlurker, MIT license
  */
 
 #include <Arduino.h>
@@ -483,6 +480,7 @@ bool mpr121::readTouchState(byte electrode) {
 
 
 // check the over current flag
+// (over current on REXT pin, probably shouldn't happen in normal operation)
 bool mpr121::readOverCurrent() {
   return bitRead(readRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS), 7);
 }
@@ -572,13 +570,13 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
 
   // set direction
   tempByte = readRegister(MPRREG_GPIO_DIRECTION);
-  tempVal = bitRead(mode, 2);
+  tempVal = bitRead(mode, 2); // settings are bit-packed into the enum to save doing lookups
   for (byte i = 0; i < count; i++) {
     bitWrite(tempByte, pin + i, tempVal);
   }
   writeRegister(MPRREG_GPIO_DIRECTION, tempByte);
 
-  // set control 0
+  // set control 0 (enable internal resistors or open drain mode)
   tempByte = readRegister(MPRREG_GPIO_CONTROL_0);
   tempVal = bitRead(mode, 1);
   for (byte i = 0; i < count; i++) {
@@ -586,7 +584,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   }
   writeRegister(MPRREG_GPIO_CONTROL_0, tempByte);
 
-  // set control 1
+  // set control 1 (internal resistor or open drain level)
   tempByte = readRegister(MPRREG_GPIO_CONTROL_1);
   tempVal = bitRead(mode, 0);
   for (byte i = 0; i < count; i++) {
@@ -628,7 +626,7 @@ void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
 
 // write an "analog" (PWM) value to consecutive GPIO pins
 // max value is 15
-// pin 9 apparently has a logic bug and pin 10 must also be enabled to work
+// pin 9 apparently has a logic bug and pin 10 must also have its data set to high for it to work
 //   (https://community.nxp.com/thread/305474)
 void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
   if (!checkGPIOPinNum(pin, count))
@@ -651,8 +649,19 @@ void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
 }
 
 
+// optional alternative to using Wire.begin() and Wire.setClock()
+// also has a built-in delay to ensure MPR121s are ready
+void mpr121::begin(unsigned long clock) {
+  while (millis() < 5)
+    delay(1);
+
+  i2cWire->begin();
+  i2cWire->setClock(clock);
+}
+
+
 // apply settings and enter run mode with a set number of electrodes
-void mpr121::startMPR(byte electrodes) {
+void mpr121::start(byte electrodes) {
   stopMPR();
   
   // restrict value of numeric properties with < 8 bits to actual sent values
@@ -698,15 +707,26 @@ void mpr121::startMPR(byte electrodes) {
   setFilterConfig(FFI, globalCDC, globalCDT, SFI, ESI);
 
   setAutoConfig(autoConfigUSL, autoConfigLSL, autoConfigTL, autoConfigRetry, autoConfigBaselineAdjust, autoConfigEnableReconfig, autoConfigEnableCalibration);
+
+  // OVCF blocks starting, so reset it 
+  if (readOverCurrent())
+    clearOverCurrent();
   
   setElectrodeConfiguration(calLock, proxEnable, electrodes);
 }
 
 // exit run mode
-void mpr121::stopMPR() {
+void mpr121::stop() {
   byte oldConfig = readRegister(MPRREG_ELECTRODE_CONFIG);
   writeRegister(MPRREG_ELECTRODE_CONFIG, oldConfig & 0b11000000);
 }
+
+
+// check if the MPR121 is in run mode
+bool mpr121::checkRunning() {
+  return (readRegister(MPRREG_ELECTRODE_CONFIG) & 0b00111111) != 0;
+}
+
 
 // reset the mpr121
 void mpr121::softReset() {

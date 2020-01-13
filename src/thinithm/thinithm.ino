@@ -135,10 +135,8 @@ void setup() {
 
 
   #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
-    delay(10); // make sure MPR121s have booted
-    Wire.begin();
-    Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
     for (mpr121 &mpr : mprs) {
+      mpr.begin();
       mpr.ESI = MPR_ESI_1; // get 4ms response time (4 samples * 1ms rate)
       mpr.autoConfigUSL = 256L * (3200 - 700) / 3200; // set autoconfig for 3.2V
     }
@@ -166,7 +164,7 @@ void setScanning(bool on_off) {
     scanOn = true;
     #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
       for (mpr121 &mpr : mprs) {
-        mpr.startMPR(12);
+        mpr.start(12);
       }
       airTower.calibrate();
       Keyboard.begin();
@@ -176,7 +174,7 @@ void setScanning(bool on_off) {
     scanOn = false;
     #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
       for (mpr121 &mpr : mprs) {
-        mpr.stopMPR();
+        mpr.stop();
       }
       Keyboard.releaseAll();
       Keyboard.end();

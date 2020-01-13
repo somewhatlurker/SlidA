@@ -11,9 +11,8 @@
  *   // for 4ms response time (default is 8): mpr.ESI = MPR_ESI_1;
  *   // for better autoconfig: mpr.autoConfigUSL = 256L * (supplyMillivolts - 700) / supplyMillivolts;
  *   
- *   Wire.begin();
- *   Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
- *   mpr.startMPR();
+ *   mpr121.begin(); // just sets up the Wire lib. mpr121 can run in 400kHz mode. if you have issues with it or want to use 100kHz, use `mpr121.begin(100000)`.
+ *   mpr.start();
  *   
  *   short touches = mpr.readTouchState();
  *   bool touch0 = bitRead(touches, 0);
@@ -24,10 +23,8 @@
  *   (electrodeTouchBuf, returned by readTouchState, is excepted)
  *   
  *   changes to properties won't take effect until you stop then restart the MPR121
- *   
- *   make sure to allow some time (10ms should be plenty) for the MPR121 to start
  * 
- * Copyright 2019 somewhatlurker, MIT license
+ * Copyright 2020 somewhatlurker, MIT license
  */
 
 #pragma once
@@ -44,6 +41,19 @@
 
 // make some buffers static (shared between instances) to save memory
 #define MPR121_SAVE_MEMORY true
+
+
+// define DEPRECATED so the same syntax can be used for any compiler without issues
+#if __GNUC__
+  # if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5)) // GCC 4.5+ supports deprecated with msg
+    #define DEPRECATED(func, msg) func __attribute__ ((deprecated(msg)))
+  #else // GCC 4.5+
+    #define DEPRECATED(func, msg) func __attribute__ ((deprecated))
+  #endif // GCC 4.5+
+#else // __GNUC__
+  #warning "Please implement DEPRECATED for your compiler"
+  #define DEPRECATED(func, msg) func
+#endif // __GNUC__
 
 
 class mpr121 {
@@ -331,7 +341,7 @@ public:
 
   // write an "analog" (PWM) value to consecutive GPIO pins
   // max value is 15
-  // pin 9 apparently has a logic bug and pin 10 must also be enabled to work
+  // pin 9 apparently has a logic bug and pin 10 must also have its data set to high for it to work
   //   (https://community.nxp.com/thread/305474)
   void writeGPIOAnalog(byte pin, byte count, byte value);
 
@@ -344,12 +354,32 @@ public:
   }
 
 
+  // optional alternative to using Wire.begin() and Wire.setClock()
+  // also has a built-in delay to ensure MPR121s are ready
+  void begin(unsigned long clock=400000);
+
+
   // apply settings and enter run mode with a set number of electrodes
-  void startMPR(byte electrodes);
+  void start(byte electrodes);
+  
+  // (deprecated) alias for start
+  DEPRECATED(void startMPR(byte electrodes), "Renamed to `start`.") {
+    start(electrodes);
+  }
 
   // exit run mode
-  void stopMPR();
+  void stop();
   
+  // (deprecated) alias for stop
+  DEPRECATED(void stopMPR(), "Renamed to `stop`.") {
+    stop();
+  }
+
+
+  // check if the MPR121 is in run mode
+  bool checkRunning();
+
+
   // reset the mpr121
   void softReset();
 };
