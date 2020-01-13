@@ -1,11 +1,15 @@
-/*
+/**
+ * \class mpr121
+ * 
  * This is a library for using mpr121 capacitive touch sensing ICs.
  * It's designed to be as easy to configure as possible -- changing most settings just requires setting a variable before calling start.
  * It does use more memory than most libraries, but it's not unmanageable on most MCUs.
  * 
- * Allows configuration of autoconfig and important sampling parameters.
+ * Implements full digital or analog sensing, and GPIO with PWM.
+ * Allows configuration of autoconfig and important sampling/filtering parameters.
  * 
  * Basic usage:
+ * \code
  *   mpr121 mpr = mpr121(address);
  *   // optionally set custom parameters
  *   // for 4ms response time (default is 8): mpr.ESI = MPR_ESI_1;
@@ -16,13 +20,13 @@
  *   
  *   short touches = mpr.readTouchState();
  *   bool touch0 = bitRead(touches, 0);
+ * \endcode
  *   
- * reading data isn't thread-safe, but that shouldn't be an issue
- * also note that some result buffers (returned by some functions) are shared between instances to save memory
- * process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
- * (electrodeTouchBuf, returned by readTouchState, is excepted)
+ * Reading data isn't thread-safe, but that shouldn't be an issue for most use cases.
+ * Also note that some result buffers (returned by some functions) are shared between instances to save memory.
+ * Process or save data for one mpr121 before reading data from the next (or change the MPR121_SAVE_MEMORY define to false to avoid this).
  * 
- * changes to properties won't take effect until you restart the MPR121
+ * Changes to properties won't take effect until you restart the MPR121.
  * 
  * 
  * AN**** numbers refer to application notes, available on the NXP website.
@@ -84,9 +88,6 @@
 #define MPR_LED7 MPR_ELE11
 
 
-/**
- * Main mpr121 class.
- */
 class mpr121 {
 private:
   byte i2cAddr;

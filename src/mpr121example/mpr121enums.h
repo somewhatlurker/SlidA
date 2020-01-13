@@ -63,32 +63,38 @@ enum mpr121ElectrodeConfigProx : byte {
   MPR_ELEPROX_0_TO_11 = 3, ///< Run with electrodes 0 to 11 combined for proximity detection enabled.
 };
 
+/// possible auto-configuration "retry" settings
 enum mpr121AutoConfigRetry : byte {
-  MPR_AUTOCONFIG_RETRY_DISABLED = 0,
-  MPR_AUTOCONFIG_RETRY_2 = 1,
-  MPR_AUTOCONFIG_RETRY_4 = 2,
-  MPR_AUTOCONFIG_RETRY_8 = 2,
-};
-enum mpr121AutoConfigBVA : byte {
-  MPR_AUTOCONFIG_BVA_DISABLED = 0,
-  MPR_AUTOCONFIG_BVA_CLEAR = 1,
-  MPR_AUTOCONFIG_BVA_SET_CLEAR3 = 2,
-  MPR_AUTOCONFIG_BVA_SET_ALL = 2,
+  MPR_AUTOCONFIG_RETRY_DISABLED = 0, ///< No retries
+  MPR_AUTOCONFIG_RETRY_2 = 1, ///< 2 retries
+  MPR_AUTOCONFIG_RETRY_4 = 2, ///< 4 retries
+  MPR_AUTOCONFIG_RETRY_8 = 3, ///< 8 retries
 };
 
+/// possible auto-configuration "baseline value adjust" settings
+/// datasheet says this is the same as CL, but AN3899 is better here
+enum mpr121AutoConfigBVA : byte {
+  MPR_AUTOCONFIG_BVA_DISABLED = 0, ///< Baseline is not changed
+  MPR_AUTOCONFIG_BVA_CLEAR = 1, ///< Baseline is cleared
+  MPR_AUTOCONFIG_BVA_SET_CLEAR3 = 2, ///< Baseline is set to the auto-config baseline with the lower 3 bits cleared
+  MPR_AUTOCONFIG_BVA_SET_ALL = 3, ///< Baseline is set to the auto-config baseline
+};
+
+/// GPIO pin modes
 enum mpr121GPIOMode : byte {
   // bottom two bits are CTL0:CTL1
   // bit 2 is DIR
   // bit 3 is EN
-  MPR_GPIO_MODE_DISABLED = 0b0000,
-  MPR_GPIO_MODE_INPUT = 0b1000,
-  MPR_GPIO_MODE_INPUT_PULLDOWN = 0b1010,
-  MPR_GPIO_MODE_INPUT_PULLUP = 0b1011,
-  MPR_GPIO_MODE_OUTPUT = 0b1100,
-  MPR_GPIO_MODE_OUTPUT_OPENDRAIN_LOW = 0b1110,
-  MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH = 0b1111,
+  MPR_GPIO_MODE_DISABLED = 0b0000, ///< Pin is disabled
+  MPR_GPIO_MODE_INPUT = 0b1000, ///< Input port with no pullup/pulldown
+  MPR_GPIO_MODE_INPUT_PULLDOWN = 0b1010, ///< Input port with a internal pulldown
+  MPR_GPIO_MODE_INPUT_PULLUP = 0b1011, ///< Input port with a internal pullup
+  MPR_GPIO_MODE_OUTPUT = 0b1100, ///< CMOS output port
+  MPR_GPIO_MODE_OUTPUT_OPENDRAIN_LOW = 0b1110, ///< Low side only open drain output port
+  MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH = 0b1111, ///< High side only open drain output port for LED driver
 };
 
+/// all MPR121 registers
 enum mpr121Register : byte {
   MPRREG_ELE0_TO_ELE7_TOUCH_STATUS = 0x00,
   MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS = 0x01,
