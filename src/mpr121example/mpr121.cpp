@@ -1,6 +1,7 @@
 /*
  * This is a library for using mpr121 capacitive touch sensing ICs.
- * It's designed to be ideal for use in rhythm game controllers.
+ * It's designed to be as easy to configure as possible -- changing most settings just requires setting a variable before calling start.
+ * It does use more memory than most libraries, but it's not unmanageable on most MCUs.
  * 
  * Allows configuration of autoconfig and important sampling parameters.
  * Very much based on the quick start guide (AN3944).
@@ -17,12 +18,15 @@
  *   short touches = mpr.readTouchState();
  *   bool touch0 = bitRead(touches, 0);
  *   
- *   reading data isn't thread-safe, but that shouldn't be an issue
- *   also note that some result buffers (returned by some functions) are shared between instances to save memory
- *   process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
- *   (electrodeTouchBuf, returned by readTouchState, is excepted)
- *   
- *   changes to properties won't take effect until you stop then restart the MPR121
+ * reading data isn't thread-safe, but that shouldn't be an issue
+ * also note that some result buffers (returned by some functions) are shared between instances to save memory
+ * process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
+ * (electrodeTouchBuf, returned by readTouchState, is excepted)
+ * 
+ * changes to properties won't take effect until you stop then restart the MPR121
+ * 
+ * 
+ * AN**** numbers refer to application notes, available on the NXP website.
  * 
  * Copyright 2020 somewhatlurker, MIT license
  */
@@ -102,11 +106,8 @@ bool mpr121::checkElectrodeNum(byte &electrode) {
 // returns true if pin num and count can be used or false if the function should immediately return
 // may modify pin and/or count to keep them in bounds as necessay
 bool mpr121::checkGPIOPinNum(byte &pin, byte &count) {
-  if (pin > 12)
+  if (pin < 4 || pin > 11)
     return false;
-  
-  if (pin < 4)
-    pin = 4;
   
   if (pin + count > 12)
     count = 12 - pin;
@@ -117,11 +118,8 @@ bool mpr121::checkGPIOPinNum(byte &pin, byte &count) {
 // returns true if pin num can be used or false if the function should immediately return
 // may modify pin to keep it in bounds as necessay
 bool mpr121::checkGPIOPinNum(byte &pin) {
-  if (pin > 12)
+  if (pin < 4 || pin > 11)
     return false;
-  
-  if (pin < 4)
-    pin = 4;
     
   return true;
 }
@@ -304,7 +302,7 @@ void mpr121::setPWM(byte pin, byte count, byte value) {
 }
 
 
-// create an MPR121 device with sane default settings
+// Creates an MPR121 device with sane default settings.
 mpr121::mpr121(byte addr, TwoWire *wire)
 {
   // ensure the mpr device has had time to get ready
@@ -396,8 +394,8 @@ mpr121::mpr121(byte addr, TwoWire *wire)
 }
 
 
-// read one touch state bool
-// also use this for reading GPIO inputs
+// Reads one touch state bool.
+// Also use this for reading GPIO inputs.
 bool mpr121::readTouchState(byte electrode) {
   if (!checkElectrodeNum(electrode))
     return false;
@@ -409,14 +407,14 @@ bool mpr121::readTouchState(byte electrode) {
 
 
 #if MPR121_USE_BITFIELDS
-  // read the 13 touch state bits
-  // also use this for reading GPIO inputs
+  // Reads the 13 touch state bits.
+  // Also use this for reading GPIO inputs.
   short mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     return rawdata[0] | (rawdata[1] << 8);
   }
 
-  // read the 15 out of range bits
+  // Reads the 15 out of range bits.
   // [13]: auto-config fail flag
   // [14]: auto-reconfig fail flag
   short mpr121::readOORState() {
@@ -425,8 +423,8 @@ bool mpr121::readTouchState(byte electrode) {
     return rawdata[0] | ((rawdata[1] & 0b00011111) << 8) | (autoConfBits << 8);
   }
 #else // MPR121_USE_BITFIELDS
-  // read the 13 touch state bools
-  // also use this for reading GPIO inputs
+  // Reads the 13 touch state bools.
+  // Also use this for reading GPIO inputs.
   bool* mpr121::readTouchState() {
     byte* rawdata = readRegister(MPRREG_ELE0_TO_ELE7_TOUCH_STATUS, 2);
     
@@ -450,7 +448,7 @@ bool mpr121::readTouchState(byte electrode) {
     return electrodeTouchBuf;
   }
 
-  // read the 15 out of range bools
+  // Reads the 15 out of range bools.
   // [13]: auto-config fail flag
   // [14]: auto-reconfig fail flag
   bool* mpr121::readOORState() {
@@ -479,19 +477,20 @@ bool mpr121::readTouchState(byte electrode) {
 #endif // MPR121_USE_BITFIELDS
 
 
-// check the over current flag
+// Reads the over current flag.
 // (over current on REXT pin, probably shouldn't happen in normal operation)
 bool mpr121::readOverCurrent() {
   return bitRead(readRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS), 7);
 }
 
-// clear the over current flag
+// Clears the over current flag.
+// (over current on REXT pin, probably shouldn't happen in normal operation)
 void mpr121::clearOverCurrent() {
   writeRegister(MPRREG_ELE8_TO_ELEPROX_TOUCH_STATUS, 0b10000000);
 }
   
 
-// read filtered data for consecutive electrodes
+// Reads filtered analog data for consecutive electrodes.
 short* mpr121::readElectrodeData(byte electrode, byte count) {
   if (!checkElectrodeNum(electrode, count))
     return electrodeDataBuf;
@@ -505,7 +504,7 @@ short* mpr121::readElectrodeData(byte electrode, byte count) {
   return &electrodeDataBuf[electrode];
 }
   
-// read baseline values for consecutive electrodes
+// Reads baseline values for consecutive electrodes.
 byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
   if (!checkElectrodeNum(electrode, count))
     return electrodeBaselineBuf;
@@ -519,7 +518,7 @@ byte* mpr121::readElectrodeBaseline(byte electrode, byte count) {
   return &electrodeBaselineBuf[electrode];
 }
 
-// write baseline value for consecutive electrodes
+// Write a baseline value to consecutive electrodes.
 void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
   if (!checkElectrodeNum(electrode, count))
     return;
@@ -529,8 +528,8 @@ void mpr121::writeElectrodeBaseline(byte electrode, byte count, byte value) {
   }
 }
 
-// easy way to set touchThresholds and releaseThresholds
-// prox sets whether to set for proximity detection too
+// A quick way to set all touchThresholds and releaseThresholds.
+// prox: Whether to set proximity detection thresholds too.
 void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
   byte maxElectrode = 11;
   if (prox)
@@ -543,9 +542,9 @@ void mpr121::setAllThresholds(byte touched, byte released, bool prox) {
 }
 
 
-// set mode for consecutive GPIO pins
-// GPIO can be used on pins 4-11 when they aren't used for sensing
-// use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+// Sets pin mode for consecutive GPIO pins.
+// GPIO can be used on pins 4-11 when they aren't used for sensing.
+// Use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA.
 void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
   if (!checkGPIOPinNum(pin, count))
     return;
@@ -602,7 +601,7 @@ void mpr121::setGPIOMode(byte pin, byte count, mpr121GPIOMode mode) {
 }
 
 
-// write a digital value to consecutive GPIO pins
+// Writes a digital value to consecutive GPIO pins.
 void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
   if (!checkGPIOPinNum(pin, count))
     return;
@@ -624,10 +623,10 @@ void mpr121::writeGPIODigital(byte pin, byte count, bool value) {
 }
 
 
-// write an "analog" (PWM) value to consecutive GPIO pins
-// max value is 15
-// pin 9 apparently has a logic bug and pin 10 must also have its data set to high for it to work
-//   (https://community.nxp.com/thread/305474)
+// Writes an "analog" (PWM) value to consecutive GPIO pins.
+// Max value is 15
+// Pin 9 apparently has a logic bug and pin 10 must also have its data set high for it to work.
+//   (see https://community.nxp.com/thread/305474)
 void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
   if (!checkGPIOPinNum(pin, count))
     return;
@@ -649,8 +648,8 @@ void mpr121::writeGPIOAnalog(byte pin, byte count, byte value) {
 }
 
 
-// optional alternative to using Wire.begin() and Wire.setClock()
-// also has a built-in delay to ensure MPR121s are ready
+// Optional alternative to using Wire.begin() and Wire.setClock().
+// Also has a built-in delay to ensure MPR121s are ready.
 void mpr121::begin(unsigned long clock) {
   while (millis() < 5)
     delay(1);
@@ -661,7 +660,8 @@ void mpr121::begin(unsigned long clock) {
 }
 
 
-// apply settings and enter run mode with a set number of electrodes
+// Applies settings and enters run mode with a given number of electrodes.
+// Very much based on the quick start guide (AN3944).
 void mpr121::start(byte electrodes) {
   stop();
   
@@ -716,20 +716,20 @@ void mpr121::start(byte electrodes) {
   setElectrodeConfiguration(calLock, proxEnable, electrodes);
 }
 
-// exit run mode
+// Exits run mode.
 void mpr121::stop() {
   byte oldConfig = readRegister(MPRREG_ELECTRODE_CONFIG);
   writeRegister(MPRREG_ELECTRODE_CONFIG, oldConfig & 0b11000000);
 }
 
 
-// check if the MPR121 is in run mode
+// Checks if the MPR121 is in run mode.
 bool mpr121::checkRunning() {
   return (readRegister(MPRREG_ELECTRODE_CONFIG) & 0b00111111) != 0;
 }
 
 
-// reset the mpr121
+// Resets the MPR121.
 void mpr121::softReset() {
   writeRegister(MPRREG_SOFT_RESET, 0x63);
 }

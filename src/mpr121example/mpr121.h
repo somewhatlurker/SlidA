@@ -1,9 +1,9 @@
 /*
  * This is a library for using mpr121 capacitive touch sensing ICs.
- * It's designed to be ideal for use in rhythm game controllers.
+ * It's designed to be as easy to configure as possible -- changing most settings just requires setting a variable before calling start.
+ * It does use more memory than most libraries, but it's not unmanageable on most MCUs.
  * 
  * Allows configuration of autoconfig and important sampling parameters.
- * Very much based on the quick start guide (AN3944).
  * 
  * Basic usage:
  *   mpr121 mpr = mpr121(address);
@@ -17,12 +17,15 @@
  *   short touches = mpr.readTouchState();
  *   bool touch0 = bitRead(touches, 0);
  *   
- *   reading data isn't thread-safe, but that shouldn't be an issue
- *   also note that some result buffers (returned by some functions) are shared between instances to save memory
- *   process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
- *   (electrodeTouchBuf, returned by readTouchState, is excepted)
- *   
- *   changes to properties won't take effect until you stop then restart the MPR121
+ * reading data isn't thread-safe, but that shouldn't be an issue
+ * also note that some result buffers (returned by some functions) are shared between instances to save memory
+ * process or save data for one mpr121 before reading data from the next (or make MPR121_SAVE_MEMORY false to avoid this)
+ * (electrodeTouchBuf, returned by readTouchState, is excepted)
+ * 
+ * changes to properties won't take effect until you restart the MPR121
+ * 
+ * 
+ * AN**** numbers refer to application notes, available on the NXP website.
  * 
  * Copyright 2020 somewhatlurker, MIT license
  */
@@ -56,6 +59,34 @@
 #endif // __GNUC__
 
 
+// pin names (mainly useful for LED pins)
+#define MPR_ELE0 0
+#define MPR_ELE1 1
+#define MPR_ELE2 2
+#define MPR_ELE3 3
+#define MPR_ELE4 4
+#define MPR_ELE5 5
+#define MPR_ELE6 6
+#define MPR_ELE7 7
+#define MPR_ELE8 8
+#define MPR_ELE9 9
+#define MPR_ELE10 10
+#define MPR_ELE11 11
+#define MPR_ELEPROX 12
+
+#define MPR_LED0 MPR_ELE4
+#define MPR_LED1 MPR_ELE5
+#define MPR_LED2 MPR_ELE6
+#define MPR_LED3 MPR_ELE7
+#define MPR_LED4 MPR_ELE8
+#define MPR_LED5 MPR_ELE9
+#define MPR_LED6 MPR_ELE10
+#define MPR_LED7 MPR_ELE11
+
+
+/**
+ * Main mpr121 class.
+ */
 class mpr121 {
 private:
   byte i2cAddr;
@@ -195,171 +226,226 @@ private:
   void setPWM(byte pin, byte count, byte value);
   
 public:
-  // create an MPR121 device with sane default settings
+  /**
+   * Creates an MPR121 device with sane default settings.
+   * 
+   * \param addr  The I2C address to use.
+   * \param wire  You can pass in an alternative TwoWire instance.
+   */
   mpr121(byte addr, TwoWire *wire = &Wire);
 
-  byte touchThresholds[13]; // ELE0-ELE11, ELEPROX
-  byte releaseThresholds[13]; // ELE0-ELE11, ELEPROX
+  byte touchThresholds[13]; ///< Touch detection thresholds for ELE0-ELE11, ELEPROX.
+  byte releaseThresholds[13]; ///< Release detection thresholds for ELE0-ELE11, ELEPROX.
 
-  byte MHDrising; // "Max Half Delta" rising value (AN3891) -- max: 63
-  byte MHDfalling; // "Max Half Delta" falling value (AN3891) -- max: 63
+  byte MHDrising; ///< "Max Half Delta" rising baseline adjustment value (AN3891) -- max: 63
+  byte MHDfalling; ///< "Max Half Delta" falling baseline adjustment value (AN3891) -- max: 63
   
-  byte NHDrising; // "Noise Half Delta" rising value (AN3891) -- max: 63
-  byte NHDfalling; // "Noise Half Delta" falling value (AN3891) -- max: 63
-  byte NHDtouched; // "Noise Half Delta" touched value (AN3891) -- max: 63
+  byte NHDrising; ///< "Noise Half Delta" rising baseline adjustment value (AN3891) -- max: 63
+  byte NHDfalling; ///< "Noise Half Delta" falling baseline adjustment value (AN3891) -- max: 63
+  byte NHDtouched; ///< "Noise Half Delta" touched baseline adjustment value (AN3891) -- max: 63
   
-  byte NCLrising; // "Noise Count Limit" rising value (AN3891)
-  byte NCLfalling; // "Noise Count Limit" falling value (AN3891)
-  byte NCLtouched; // "Noise Count Limit" touched value (AN3891)
+  byte NCLrising; ///< "Noise Count Limit" rising baseline adjustment value (AN3891)
+  byte NCLfalling; ///< "Noise Count Limit" falling baseline adjustment value (AN3891)
+  byte NCLtouched; ///< "Noise Count Limit" touched baseline adjustment value (AN3891)
   
-  byte FDLrising; // "Filter Delay Limit" rising value (AN3891)
-  byte FDLfalling; // "Filter Delay Limit" falling value (AN3891)
-  byte FDLtouched; // "Filter Delay Limit" touched value (AN3891)
+  byte FDLrising; ///< "Filter Delay Limit" rising baseline adjustment value (AN3891)
+  byte FDLfalling; ///< "Filter Delay Limit" falling baseline adjustment value (AN3891)
+  byte FDLtouched; ///< "Filter Delay Limit" touched baseline adjustment value (AN3891)
 
   
-  byte MHDrisingProx; // "Max Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
-  byte MHDfallingProx; // "Max Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
+  byte MHDrisingProx; ///< "Max Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
+  byte MHDfallingProx; ///< "Max Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
   
-  byte NHDrisingProx; // "Noise Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
-  byte NHDfallingProx; // "Noise Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
-  byte NHDtouchedProx; // "Noise Half Delta" touched value for proximity detection (AN3891/AN3893) -- max: 63
+  byte NHDrisingProx; ///< "Noise Half Delta" rising value for proximity detection (AN3891/AN3893) -- max: 63
+  byte NHDfallingProx; ///< "Noise Half Delta" falling value for proximity detection (AN3891/AN3893) -- max: 63
+  byte NHDtouchedProx; ///< "Noise Half Delta" touched value for proximity detection (AN3891/AN3893) -- max: 63
   
-  byte NCLrisingProx; // "Noise Count Limit" rising value for proximity detection (AN3891/AN3893)
-  byte NCLfallingProx; // "Noise Count Limit" falling value for proximity detection (AN3891/AN3893)
-  byte NCLtouchedProx; // "Noise Count Limit" touched value for proximity detection (AN3891/AN3893)
+  byte NCLrisingProx; ///< "Noise Count Limit" rising value for proximity detection (AN3891/AN3893)
+  byte NCLfallingProx; ///< "Noise Count Limit" falling value for proximity detection (AN3891/AN3893)
+  byte NCLtouchedProx; ///< "Noise Count Limit" touched value for proximity detection (AN3891/AN3893)
   
-  byte FDLrisingProx; // "Filter Delay Limit" rising value for proximity detection (AN3891/AN3893)
-  byte FDLfallingProx; // "Filter Delay Limit" falling value for proximity detection (AN3891/AN3893)
-  byte FDLtouchedProx; // "Filter Delay Limit" touched value for proximity detection (AN3891/AN3893)
-
-
-  byte debounceTouch; // set "Debounce" count for touch (times a detection must be sampled) -- max: 7
-  byte debounceRelease; // set "Debounce" count for release (times a detection must be sampled) -- max: 7
+  byte FDLrisingProx; ///< "Filter Delay Limit" rising value for proximity detection (AN3891/AN3893)
+  byte FDLfallingProx; ///< "Filter Delay Limit" falling value for proximity detection (AN3891/AN3893)
+  byte FDLtouchedProx; ///< "Filter Delay Limit" touched value for proximity detection (AN3891/AN3893)
 
 
-  mpr121FilterFFI FFI; // "First Filter Iterations" (number of samples taken for the first level of filtering)
-  byte globalCDC; // global "Charge Discharge Current" (μA), not used if autoconfig is enabled -- max 63
-  mpr121FilterCDT globalCDT; // global "Charge Discharge Time" (μs), not used if autoconfig is enabled
-  mpr121FilterSFI SFI; // "Second Filter Iterations" (number of samples taken for the second level of filtering)
-  mpr121FilterESI ESI; // "Electrode Sample Interval" (ms)
+  byte debounceTouch; ///< Set "Debounce" count for touches (times a detection must be sampled) -- max: 7
+  byte debounceRelease; ///< Set "Debounce" count for releases (times a detection must be sampled) -- max: 7
+
+
+  mpr121FilterFFI FFI; ///< "First Filter Iterations" (number of samples taken for the first level of filtering)
+  byte globalCDC; ///< Global "Charge Discharge Current" (μA), not used if autoconfig is enabled -- max 63
+  mpr121FilterCDT globalCDT; ///< Global "Charge Discharge Time" (μs), not used if autoconfig is enabled
+  mpr121FilterSFI SFI; ///< "Second Filter Iterations" (number of samples taken for the second level of filtering)
+  mpr121FilterESI ESI; ///< "Electrode Sample Interval" (ms)
   
   // TODO: INDIVIDUAL CHARGE CURRENT/TIME
 
 
-  mpr121ElectrodeConfigCL calLock; // "Calibration Lock" (baseline tracking and initial value settings)
-  mpr121ElectrodeConfigProx proxEnable; // ELEPROX_EN: sets electrodes to be used for proximity detection
+  mpr121ElectrodeConfigCL calLock; /// "Calibration Lock" (baseline tracking and initial value settings)
+  mpr121ElectrodeConfigProx proxEnable; /// ELEPROX_EN: sets what electrodes will be used for proximity detection
 
-  byte autoConfigUSL; // "Up-Side Limit" for auto calibration -- if not set when starting, this will be set to the ideal value for 1.8V supply
-  byte autoConfigLSL; // "Low-Side Limit" for auto calibration -- if not set when starting, this will be set based on USL
-  byte autoConfigTL; // "Target Level" for auto calibration -- if not set when starting, this will be set based on USL
-  mpr121AutoConfigRetry autoConfigRetry; // number of retries for failed config before setting out of range
-  mpr121AutoConfigBVA autoConfigBaselineAdjust; // "Baseline Value Adjust" changes how the baseline registers will be set after auto-configuration completes
-  bool autoConfigEnableReconfig; // "Automatic Reconfiguration Enable" will reconfigure out of range (failed) channels every sampling interval
-  bool autoConfigEnableCalibration; // "Automatic Configuration Enable" will enable/disable auto-configuration when entering run mode
+  byte autoConfigUSL; /// "Up-Side Limit" for auto calibration -- if not set when starting, this will be automatically set to the ideal value for 1.8V supply
+  byte autoConfigLSL; /// "Low-Side Limit" for auto calibration -- if not set when starting, this will be automatically set based on USL
+  byte autoConfigTL; /// "Target Level" for auto calibration -- if not set when starting, this will be automatically set based on USL
+  mpr121AutoConfigRetry autoConfigRetry; /// Number of retries for failed auto-config before out of range will be set
+  mpr121AutoConfigBVA autoConfigBaselineAdjust; /// "Baseline Value Adjust" changes how the baseline registers will be set after auto-configuration completes
+  bool autoConfigEnableReconfig; /// "Automatic Reconfiguration Enable" will try to reconfigure out of range (failed) channels every sampling interval
+  bool autoConfigEnableCalibration; /// "Automatic Configuration Enable" will enable/disable auto-configuration when entering run mode
 
   // auto-conrig control register 1 stuff isn't implemented
 
 
-  // read one touch state bool
-  // also use this for reading GPIO inputs
+  /** 
+   * Reads one touch state bool.
+   * Also use this for reading GPIO inputs.
+   */
   bool readTouchState(byte electrode);
 
   #if MPR121_USE_BITFIELDS
-    // read the 13 touch state bits
-    // also use this for reading GPIO inputs
+    /** 
+     * Reads the 13 touch state bits.
+     * Also use this for reading GPIO inputs.
+     */
     short readTouchState();
 
-    // read the 15 out of range bits
-    // [13]: auto-config fail flag
-    // [14]: auto-reconfig fail flag
+    /** Reads the 15 out of range bits.
+     * [13]: auto-config fail flag
+     * [14]: auto-reconfig fail flag
+     */
     short readOORState();
   #else
-    // read the 13 touch state bools
-    // also use this for reading GPIO inputs
+    /** 
+     * Reads the 13 touch state bools.
+     * Also use this for reading GPIO inputs.
+     */
     bool* readTouchState();
 
-    // read the 15 out of range bools
-    // [13]: auto-config fail flag
-    // [14]: auto-reconfig fail flag
+    /** Reads the 15 out of range bools.
+     * [13]: auto-config fail flag
+     * [14]: auto-reconfig fail flag
+     */
     bool* readOORState();
   #endif
 
-  // check the over current flag
+  /**
+   * Reads the over current flag.
+   * (over current on REXT pin, probably shouldn't happen in normal operation)
+   */
   bool readOverCurrent();
 
-  // clear the over current flag
+  /**
+   * Clears the over current flag.
+   * (over current on REXT pin, probably shouldn't happen in normal operation)
+   */
   void clearOverCurrent();
 
-  // read filtered data for consecutive electrodes
+  /**
+   * Reads filtered analog data for consecutive electrodes.
+   */
   short* readElectrodeData(byte electrode, byte count);
   
-  // read filtered data for a single electrode
+  /**
+   * Reads filtered analog data for a single electrode.
+   */
   short readElectrodeData(byte electrode) {
     return readElectrodeData(electrode, 1)[0];
   }
   
-  // read baseline values for consecutive electrodes
+  /**
+   * Reads baseline values for consecutive electrodes.
+   */
   byte* readElectrodeBaseline(byte electrode, byte count);
   
-  // read baseline value for a single electrode
+  /**
+   * Reads the baseline value for a single electrode.
+   */
   byte readElectrodeBaseline(byte electrode) {
     return readElectrodeBaseline(electrode, 1)[0];
   }
 
-  // write baseline value for consecutive electrodes
+  /**
+   * Writes a baseline value to consecutive electrodes.
+   */
   void writeElectrodeBaseline(byte electrode, byte count, byte value);
   
-  // write baseline value for a single electrodes
+  /**
+   * Writes the baseline value for a single electrode.
+   */
   void writeElectrodeBaseline(byte electrode, byte value) {
     writeElectrodeBaseline(electrode, 1, value);
   }
 
-  // easy way to set touchThresholds and releaseThresholds
-  // prox sets whether to set for proximity detection too
+  /**
+   * A quick way to set all ::touchThresholds and ::releaseThresholds.
+   * 
+   * \param prox  Whether to set proximity detection thresholds too.
+   */
   void setAllThresholds(byte touched, byte released, bool prox);
 
 
-  // set mode for consecutive GPIO pins
-  // GPIO can be used on pins 4-11 when they aren't used for sensing
-  // use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+  /**
+   * Sets pin mode for consecutive GPIO pins.
+   * 
+   * GPIO can be used on pins 4-11 when they aren't used for sensing.
+   * Use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA.
+   */
   void setGPIOMode(byte pin, byte count, mpr121GPIOMode mode);
 
-  // set mode for a single GPIO pin
-  // GPIO can be used on pins 4-11 when they aren't used for sensing
-  // use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA
+  /**
+   * Sets pin mode for a single GPIO pin.
+   * 
+   * GPIO can be used on pins 4-11 when they aren't used for sensing.
+   * Use mode MPR_GPIO_MODE_OUTPUT_OPENDRAIN_HIGH for direct LED driving -- it can source up to 12mA.
+   */
   void setGPIOMode(byte pin, mpr121GPIOMode mode) {
     setGPIOMode(pin, 1, mode);
   }
 
-  // write a digital value to consecutive GPIO pins
+  /**
+   * Writes a digital value to consecutive GPIO pins.
+   */
   void writeGPIODigital(byte pin, byte count, bool value);
 
-  // write a digital value to a single GPIO pin
+  /**
+   * Writes a digital value to a single GPIO pin.
+   */
   void writeGPIODigital(byte pin, bool value) {
     writeGPIODigital(pin, 1, value);
   }
 
-  // write an "analog" (PWM) value to consecutive GPIO pins
-  // max value is 15
-  // pin 9 apparently has a logic bug and pin 10 must also have its data set to high for it to work
-  //   (https://community.nxp.com/thread/305474)
+  /**
+   * Writes an "analog" (PWM) value to consecutive GPIO pins.
+   * Max value is 15
+   * 
+   * Pin 9 apparently has a logic bug and pin 10 must also have its data set high for it to work.
+   *   (see https://community.nxp.com/thread/305474)
+   */
   void writeGPIOAnalog(byte pin, byte count, byte value);
 
-  // write an "analog" (PWM) value to a single GPIO pin
-  // max value is 15
-  // pin 9 apparently has a logic bug and pin 10 must also be enabled to work
-  //   (https://community.nxp.com/thread/305474)
+  /**
+   * Writes an "analog" (PWM) value to a single GPIO pin.
+   * Max value is 15
+   * 
+   * Pin 9 apparently has a logic bug and pin 10 must also have its data set high for it to work.
+   *   (see https://community.nxp.com/thread/305474)
+   */
   void writeGPIOAnalog(byte pin, byte value) {
     writeGPIOAnalog(pin, 1, value);
   }
 
 
-  // optional alternative to using Wire.begin() and Wire.setClock()
-  // also has a built-in delay to ensure MPR121s are ready
+  /**
+   * Optional alternative to using Wire.begin() and Wire.setClock().
+   * Also has a built-in delay to ensure MPR121s are ready.
+   */
   void begin(unsigned long clock=400000);
 
 
-  // apply settings and enter run mode with a set number of electrodes
+  /**
+   * Applies settings and enters run mode with a given number of electrodes.
+   * Very much based on the quick start guide (AN3944).
+   */
   void start(byte electrodes);
   
   // (deprecated) alias for start
@@ -367,7 +453,9 @@ public:
     start(electrodes);
   }
 
-  // exit run mode
+  /**
+   * Exits run mode.
+   */
   void stop();
   
   // (deprecated) alias for stop
@@ -376,11 +464,15 @@ public:
   }
 
 
-  // check if the MPR121 is in run mode
+  /**
+   * Checks if the MPR121 is in run mode.
+   */
   bool checkRunning();
 
 
-  // reset the mpr121
+  /**
+   * Resets the MPR121.
+   */
   void softReset();
 };
 

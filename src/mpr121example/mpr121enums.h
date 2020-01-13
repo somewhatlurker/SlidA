@@ -7,49 +7,60 @@
 #pragma once
 #include <Arduino.h>
 
+/// possible "first filter iterations" settings
 enum mpr121FilterFFI : byte {
-  MPR_FFI_6 = 0,
-  MPR_FFI_10 = 1,
-  MPR_FFI_18 = 2,
-  MPR_FFI_34 = 3,
-};
-enum mpr121FilterCDT : byte {
-  MPR_CDT_0_5 = 1,
-  MPR_CDT_1 = 2,
-  MPR_CDT_2 = 3,
-  MPR_CDT_4 = 4,
-  MPR_CDT_8 = 5,
-  MPR_CDT_16 = 6,
-  MPR_CDT_32 = 7,
-};
-enum mpr121FilterSFI : byte {
-  MPR_SFI_4 = 0,
-  MPR_SFI_6 = 1,
-  MPR_SFI_10 = 2,
-  MPR_SFI_18 = 3,
-};
-enum mpr121FilterESI : byte {
-  MPR_ESI_1 = 0,
-  MPR_ESI_2 = 1,
-  MPR_ESI_4 = 2,
-  MPR_ESI_8 = 3,
-  MPR_ESI_16 = 4,
-  MPR_ESI_32 = 5,
-  MPR_ESI_64 = 6,
-  MPR_ESI_128 = 7,
+  MPR_FFI_6 = 0, ///< 6 samples taken
+  MPR_FFI_10 = 1, ///< 10 samples taken
+  MPR_FFI_18 = 2, ///< 18 samples taken
+  MPR_FFI_34 = 3, ///< 34 samples taken
 };
 
-enum mpr121ElectrodeConfigCL : byte {
-  MPR_CL_TRACKING_ENABLED = 0,
-  MPR_CL_TRACKING_DISABLED = 1,
-  MPR_CL_TRACKING_ENABLED_LOAD5 = 2,
-  MPR_CL_TRACKING_ENABLED_LOAD10 = 3,
+/// possible "charge discharge time" settings
+enum mpr121FilterCDT : byte {
+  MPR_CDT_DISABLED, ///< disable charging
+  MPR_CDT_0_5 = 1, ///< 0.5 microseconds
+  MPR_CDT_1 = 2, ///< 1 microsecond
+  MPR_CDT_2 = 3, ///< 2 microseconds
+  MPR_CDT_4 = 4, ///< 4 microseconds
+  MPR_CDT_8 = 5, ///< 8 microseconds
+  MPR_CDT_16 = 6, ///< 16 microseconds
+  MPR_CDT_32 = 7, ///< 32 microseconds
 };
+
+/// possible "second filter iterations" settings
+enum mpr121FilterSFI : byte {
+  MPR_SFI_4 = 0, ///< 4 samples taken
+  MPR_SFI_6 = 1, ///< 6 samples taken
+  MPR_SFI_10 = 2, ///< 10 samples taken
+  MPR_SFI_18 = 3, ///< 18 samples taken
+};
+
+/// possible "electrode sample interval" settings
+enum mpr121FilterESI : byte {
+  MPR_ESI_1 = 0, ///< 1 ms
+  MPR_ESI_2 = 1, ///< 2 ms
+  MPR_ESI_4 = 2, ///< 4 ms
+  MPR_ESI_8 = 3, ///< 8 ms
+  MPR_ESI_16 = 4, ///< 16 ms
+  MPR_ESI_32 = 5, ///< 32 ms
+  MPR_ESI_64 = 6, ///< 64 ms
+  MPR_ESI_128 = 7, ///< 128 ms
+};
+
+/// possible "calibration lock" settings
+enum mpr121ElectrodeConfigCL : byte {
+  MPR_CL_TRACKING_ENABLED = 0, ///< Baseline tracking enabled, initial baseline value is current value in baseline value register
+  MPR_CL_TRACKING_DISABLED = 1, ///< Baseline tracking disabled
+  MPR_CL_TRACKING_ENABLED_LOAD5 = 2, ///< Baseline tracking enabled, initial baseline value is loaded with the 5 high bits of the first 10-bit electrode data value
+  MPR_CL_TRACKING_ENABLED_LOAD10 = 3, ///< Baseline tracking enabled, initial baseline value is loaded with all 10 bits of the first electrode data value
+};
+
+/// possible "proximity enable" settings
 enum mpr121ElectrodeConfigProx : byte {
-  MPR_ELEPROX_DISABLED = 0,
-  MPR_ELEPROX_0_TO_1 = 1,
-  MPR_ELEPROX_0_TO_3 = 2,
-  MPR_ELEPROX_0_TO_11 = 3,
+  MPR_ELEPROX_DISABLED = 0, ///< Proximity detection disabled
+  MPR_ELEPROX_0_TO_1 = 1, ///< Run with electrodes 0 to 1 combined for proximity detection enabled.
+  MPR_ELEPROX_0_TO_3 = 2, ///< Run with electrodes 0 to 3 combined for proximity detection enabled.
+  MPR_ELEPROX_0_TO_11 = 3, ///< Run with electrodes 0 to 11 combined for proximity detection enabled.
 };
 
 enum mpr121AutoConfigRetry : byte {
