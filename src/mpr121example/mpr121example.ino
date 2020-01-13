@@ -7,8 +7,6 @@
 mpr121 mprs[NUM_MPRS] = NULL;
 
 void setup() {
-  Wire.begin();
-  Wire.setClock(400000); // mpr121 can run in fast mode. if you have issues, try removing this line
   for (int i = 0; i < NUM_MPRS; i++) {
     mpr121 &mpr = mprs[i];
     
