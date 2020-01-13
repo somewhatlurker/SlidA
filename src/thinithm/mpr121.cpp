@@ -655,6 +655,7 @@ void mpr121::begin(unsigned long clock) {
   while (millis() < 5)
     delay(1);
 
+  i2cWire->end(); // apparently some platforms have issues with double starts, I guess this fixes it
   i2cWire->begin();
   i2cWire->setClock(clock);
 }
@@ -662,7 +663,7 @@ void mpr121::begin(unsigned long clock) {
 
 // apply settings and enter run mode with a set number of electrodes
 void mpr121::start(byte electrodes) {
-  stopMPR();
+  stop();
   
   // restrict value of numeric properties with < 8 bits to actual sent values
   MHDrising &= 0b00111111;
