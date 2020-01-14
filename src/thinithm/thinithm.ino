@@ -1,8 +1,8 @@
 #include "segaSlider.h"
 #include "sliderdefs.h"
-#include "mpr121.h"
 #include "airTower.h"
 #include "pins.h"
+#include <QuickMpr121.h>
 #include <FastLED.h>
 #include <Keyboard.h>
 
