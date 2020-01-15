@@ -169,8 +169,8 @@ bool segaSlider::readSerial() {
   if (!checkReadAvailable())
     return false;
   
-  unsigned long startMillis = millis();
-  unsigned long lastAvailableMillis = millis();
+  unsigned long startMicros = micros();
+  unsigned long lastAvailableMicros = startMicros;
   
   // catch unexpected fault conditions and reset on them
   if (serialInBufPos >= SLIDER_SERIAL_BUF_SIZE)
@@ -195,7 +195,7 @@ bool segaSlider::readSerial() {
   // while serial is available, read space separated strings into buffer bytes
   while (serialInBufPos != SLIDER_SERIAL_BUF_SIZE) {
     if (checkReadAvailable()) {
-      lastAvailableMillis = millis();
+      lastAvailableMicros = micros();
       
       #if SLIDER_SERIAL_TEXT_MODE 
         int val_int = tryReadSerialTextByte();
@@ -237,13 +237,15 @@ bool segaSlider::readSerial() {
         }
       }
     }
+
+    unsigned long microsNow = micros();
     
-    // wait until X ms after last received byte before returning from readSerial
-    if (millis() - lastAvailableMillis >= SLIDER_SERIAL_RECEIVE_TIMEOUT)
+    // wait until X microseconds after last received byte before returning from readSerial
+    if (microsNow - lastAvailableMicros >= SLIDER_SERIAL_RECEIVE_TIMEOUT_US)
       break;
 
-    // wait maximum of X ms from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
-    if (millis() - startMillis >= SLIDER_SERIAL_RECEIVE_MAX_MS)
+    // wait maximum of X microseconds from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
+    if (microsNow - startMicros >= SLIDER_SERIAL_RECEIVE_MAX_US)
       break;
   }
 

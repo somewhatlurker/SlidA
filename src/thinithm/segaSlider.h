@@ -35,11 +35,11 @@
 // this seems to do very little so I'll leave it disabled
 #define SLIDER_SERIAL_RECEIVE_CHECK_RWAL false
 
-// wait until X ms after last received byte before returning from readSerial
-#define SLIDER_SERIAL_RECEIVE_TIMEOUT 1
+// wait until X microseconds after last received byte before returning from readSerial
+#define SLIDER_SERIAL_RECEIVE_TIMEOUT_US 650
 
-// wait maximum of X ms from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
-#define SLIDER_SERIAL_RECEIVE_MAX_MS 4
+// wait maximum of X microseconds from starting to receive bytes before returning from readSerial (even if new bytes can still be read)
+#define SLIDER_SERIAL_RECEIVE_MAX_US 4000
 
 // wait maximum of X ms for there to be enough output capacity to send a packet
 #define SLIDER_SERIAL_SEND_WAIT_MS 5
