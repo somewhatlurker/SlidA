@@ -34,4 +34,8 @@ Set pins in pins.h or use the defaults (based around Pro Micro):
 Slider sensors should be 32 conductive rectangles (eg. copper tape or PCB fills) against the rear side of ~3mm acrylic.  
 They are connected sequentially to the MPR121s from left to right.
 
+Buttons connect between the matching pin and ground.
+
+If you have trouble, try limiting the game FPS to <120.
+
 For now, MIT license (subject to change for future versions)
