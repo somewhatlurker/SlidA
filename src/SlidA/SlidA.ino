@@ -1,10 +1,15 @@
 #include "segaSlider.h"
 #include "sliderdefs.h"
-#include "airTower.h"
 #include "pins.h"
 #include <QuickMpr121.h>
-#include <FastLED.h>
-#include <Keyboard.h>
+
+#if SLIDER_LEDS
+  #include <FastLED.h>
+#endif
+
+#if BUTTON_INPUT
+  #include <Keyboard.h>
+#endif
 
 
 // disable input scanning and generate fake slider data instead
@@ -16,6 +21,7 @@
 #define FAKE_DATA_TYPE_TIMERS 2
 #define FAKE_DATA_TYPE FAKE_DATA_TYPE_TIMERS
 
+// force enable scanning even with fake data enabled
 #define FAKE_DATA_DO_SCANNING true
 
 
@@ -26,15 +32,17 @@
 #endif
 
 
-// slider LED vars
-#define NUM_SLIDER_LEDS 32
-CRGB sliderLeds[NUM_SLIDER_LEDS];
-
-#define RGB_BRIGHTNESS 127
-// 450mA should be unnoticeable up to ~140 brightness, and even then going brighter won't be too bad
-#define RGB_POWER_LIMIT 450
-
-#define MODE_LED_RGB_INDEX NUM_SLIDER_LEDS-1
+#if SLIDER_LEDS
+  // slider LED vars
+  #define NUM_SLIDER_LEDS 32
+  CRGB sliderLeds[NUM_SLIDER_LEDS];
+  
+  #define RGB_BRIGHTNESS 127
+  // 450mA should be unnoticeable up to ~140 brightness, and even then going brighter won't be too bad
+  #define RGB_POWER_LIMIT 450
+  
+  #define MODE_LED_RGB_INDEX NUM_SLIDER_LEDS-1
+#endif // SLIDER_LEDS
 
 
 // status/error LED state
@@ -82,11 +90,6 @@ errorState curError;
 segaSlider sliderProtocol = segaSlider(&Serial);
 
 
-// slider board type for remapping
-sliderBoardType curSliderMode = SLIDER_TYPE_DIVA;
-const sliderDef* curSliderDef = allSliderDefs[curSliderMode];
-
-
 // slider protocol packets for reuse
 byte sliderBuf[32];
 sliderPacket scanPacket = { SLIDER_SCAN_REPORT, sliderBuf, 32, true };
@@ -99,12 +102,8 @@ sliderPacket boardinfoPacket = { SLIDER_BOARDINFO, (byte*)&boardInfoData, sizeof
 
 
 // mpr121s
-#define NUM_MPRS 1
-mpr121 mprs[NUM_MPRS] = { mpr121(0x5a) }; //, mpr121(0x5b), mpr121(0x5c), mpr121(0x5d) };
-
-
-// air tower
-airTower airTower({ { {PIN_AIRLED_1, PIN_AIRLED_1B}, {PIN_AIRLED_2, PIN_AIRLED_2B}, {PIN_AIRLED_3, PIN_AIRLED_3B} }, {PIN_AIRSENSOR_1, PIN_AIRSENSOR_2, PIN_AIRSENSOR_3, PIN_AIRSENSOR_4, PIN_AIRSENSOR_5, PIN_AIRSENSOR_6} });
+#define NUM_MPRS 3
+mpr121 mprs[NUM_MPRS];
 
 
 // loop timing/processing stuff
@@ -112,14 +111,10 @@ airTower airTower({ { {PIN_AIRLED_1, PIN_AIRLED_1B}, {PIN_AIRLED_2, PIN_AIRLED_2
 // sleep for x microseconds after running the main loop
 #define LOOP_SLEEP_US 333
 
-// update air readings every x loops
-// (air is less sensitive to timing so can be updated less often if necessary)
-#define AIR_UPDATE_DUTY 2
-
 // time to wait after losing serial connection before disabling scan and LEDs
 #define SERIAL_TIMEOUT_MS 10000
 
-// maximum number of packets to process in one loop
+// maximum number of received serial packets to process in one loop
 #define MAX_PACKETS_PER_LOOP 1
 
 
@@ -127,8 +122,13 @@ void setup() {
   // set pin modes for stuff that's handled in the main sketch file
   pinMode(STATUS_LED_BASIC_1_PIN, OUTPUT);
   pinMode(STATUS_LED_BASIC_2_PIN, OUTPUT);
-  pinMode(PIN_MODESEL, INPUT_PULLUP);
   pinMode(PIN_SLIDER_IRQ, INPUT);
+
+  #if BUTTON_INPUT
+    for (kbInput &kbi : kbButtons) {
+      pinMode(kbi.pin, INPUT_PULLUP);
+    }
+  #endif // BUTTON_INPUT
 
   // turn on led during setup
   // not gonna bother shifting this to the status lights
@@ -143,12 +143,14 @@ void setup() {
     }
   #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
 
-  
-  // 5V is LED voltage, not arduino voltage
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, RGB_POWER_LIMIT); 
-  
-  // SK6812 should be WS2812(B) compatible, but FastLED has it natively anyway
-  FastLED.addLeds<SK6812, PIN_SLIDER_LEDIN, GRB>(sliderLeds, NUM_SLIDER_LEDS);
+
+  #if SLIDER_LEDS
+    // 5V is LED voltage, not arduino voltage
+    FastLED.setMaxPowerInVoltsAndMilliamps(5, RGB_POWER_LIMIT); 
+    
+    // originally I used SK6812, but they should be WS2812(B) compatible
+    FastLED.addLeds<WS2812B, PIN_SLIDER_LED, GRB>(sliderLeds, NUM_SLIDER_LEDS);
+  #endif // SLIDER_LEDS
 
 
   Serial.setTimeout(0);
@@ -159,7 +161,7 @@ void setup() {
 
 bool scanOn = false;
 
-// enable or disable slider and air scanning
+// enable or disable slider and button scanning
 void setScanning(bool on_off) {
   if (on_off && !scanOn) {
     scanOn = true;
@@ -167,8 +169,9 @@ void setScanning(bool on_off) {
       for (mpr121 &mpr : mprs) {
         mpr.start(12);
       }
-      airTower.calibrate();
-      Keyboard.begin();
+      #if BUTTON_INPUT
+        Keyboard.begin();
+      #endif
     #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   }
   else if (!on_off && scanOn) {
@@ -177,8 +180,10 @@ void setScanning(bool on_off) {
       for (mpr121 &mpr : mprs) {
         mpr.stop();
       }
-      Keyboard.releaseAll();
-      Keyboard.end();
+      #if BUTTON_INPUT
+        Keyboard.releaseAll();
+        Keyboard.end();
+      #endif
     #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
   }
 }
@@ -241,13 +246,11 @@ void doSliderScan() {
 
     #if !FAKE_DATA
       // apply touch data to output buffer
-      for (byte i = 0; i < curSliderDef->keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
-        for (byte j = 0; j < curSliderDef->inputsPerKey; j++) { // for all inputs that may contribute
-          byte inputPos = curSliderDef->keyMap[i][j];
-    
-          if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
-            sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
-          }
+      for (byte i = 0; i < divaSlider.keyCount && i < sizeof(sliderBuf); i++) { // for all keys, with bounds limited
+        byte inputPos = divaSlider.keyMap[i];
+  
+        if (inputPos < numInputTouches && allTouches[inputPos]) { // check the result to read is in-range
+          sliderBuf[i] |=  0xC0; // note this uses bitwise or to stack nicely
         }
       }
     #endif // !FAKE_DATA
@@ -257,21 +260,26 @@ void doSliderScan() {
     curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
 }
 
-// perform an air sensor scan and send it to Keyboard
-void doAirScan() {
-  #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
-    static const char airKeys[6] = {'/', '.', '\'', ';', ']', '['};
-    Keyboard.releaseAll();
-  
-    for (byte i = 0; i < 6; i++) {
-      if (airTower.checkLevel(i)) {
+#if BUTTON_INPUT
+  // perform a button scan and send it to Keyboard
+  void doButtonScan() {
+    #if !FAKE_DATA || FAKE_DATA_DO_SCANNING
+      for (kbInput &kbi : kbButtons) {
+        bool state = digitalRead(kbi.pin);
         #if !FAKE_DATA
-          Keyboard.press(airKeys[i]);
-        #endif // !FAKE_DATA
+          if (state != kbi.lastState) {
+            if (state == LOW) // LOW is pressed
+              Keyboard.press(kbi.key);
+            else
+              Keyboard.release(kbi.key);
+
+            kbi.lastState = state;
+          }
+        #endif // !FAKE_DATE
       }
-    }
-  #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
-}
+    #endif // !FAKE_DATA || FAKE_DATA_DO_SCANNING
+  }
+#endif
 
 
 // timing vars used in main loop
@@ -280,14 +288,13 @@ unsigned long lastSliderSendMillis;
 unsigned long lastSerialRecvMillis = -SERIAL_TIMEOUT_MS;
 unsigned long loopCount = 0;
 
-bool ledUpdate = false;
+#if SLIDER_LEDS
+  bool ledUpdate = false;
+#endif // SLIDER_LEDS
 
 void loop() {
   // clear errors (they'll be reset if necessary)
   curError = ERRORSTATE_NONE;
-
-  //curSliderMode = (digitalRead(PIN_MODESEL) == LOW) ? SLIDER_TYPE_DIVA : SLIDER_TYPE_CHUNI;
-  curSliderDef = allSliderDefs[curSliderMode];
 
   // check for new slider data
   byte pktCount = 0;
@@ -315,8 +322,8 @@ void loop() {
 
     switch(pkt.Command) {
       case SLIDER_BOARDINFO:
-        memcpy(boardInfoData.model, curSliderDef->model, sizeof(boardInfo::model));
-        memcpy(boardInfoData.chipNumber, curSliderDef->chipNumber, sizeof(boardInfo::chipNumber));
+        memcpy(boardInfoData.model, divaSlider.model, sizeof(boardInfo::model));
+        memcpy(boardInfoData.chipNumber, divaSlider.chipNumber, sizeof(boardInfo::chipNumber));
         if (!sliderProtocol.sendPacket(boardinfoPacket))
           curError |= ERRORSTATE_SERIAL_SEND_FAILURE;
         break;
@@ -345,35 +352,37 @@ void loop() {
         break;
         
       case SLIDER_LED:
-        if (pkt.DataLength > 0) {
-          FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
-
-          byte maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
-          
-          for (byte i = 0; i < curSliderDef->ledCount; i++) {
-            byte outputLed = curSliderDef->ledMap[i];
-
-            if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
-              if (i < maxPacketLeds) {
-                if (outputLed % 2 == 0) {
-                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
-                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
-                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+        #if SLIDER_LEDS
+          if (pkt.DataLength > 0) {
+            FastLED.setBrightness((pkt.Data[0] & 0x3f) * RGB_BRIGHTNESS / 0x3f); // this seems to max out at 0x3f (63), use that for division
+  
+            byte maxPacketLeds = (pkt.DataLength - 1) / 3; // subtract 1 because of brightness byte
+            
+            for (byte i = 0; i < divaSlider.ledCount; i++) {
+              byte outputLed = divaSlider.ledMap[i];
+  
+              if (outputLed < NUM_SLIDER_LEDS) { // make sure there's no out of bounds writes
+                if (i < maxPacketLeds) {
+                  if (outputLed % 2 == 0) {
+                    sliderLeds[outputLed].b = pkt.Data[i*3 + 1]; // start with + 1 because of brightness byte
+                    sliderLeds[outputLed].r = pkt.Data[i*3 + 2];
+                    sliderLeds[outputLed].g = pkt.Data[i*3 + 3];
+                  }
+                  else {
+                    // dim values for separators
+                    sliderLeds[outputLed].b = pkt.Data[i*3 + 1] / 2; // start with + 1 because of brightness byte
+                    sliderLeds[outputLed].r = pkt.Data[i*3 + 2] / 2;
+                    sliderLeds[outputLed].g = pkt.Data[i*3 + 3] / 2;
+                  }
                 }
                 else {
-                  // dim values for separators
-                  sliderLeds[outputLed].b = pkt.Data[i*3 + 1] / 2; // start with + 1 because of brightness byte
-                  sliderLeds[outputLed].r = pkt.Data[i*3 + 2] / 2;
-                  sliderLeds[outputLed].g = pkt.Data[i*3 + 3] / 2;
+                  sliderLeds[outputLed] = CRGB::Black;
                 }
               }
-              else {
-                sliderLeds[outputLed] = CRGB::Black;
-              }
             }
+            ledUpdate = true;
           }
-          ledUpdate = true;
-        }
+        #endif // SLIDER_LEDS
         break; // no response needed
         
       default:
@@ -393,58 +402,52 @@ void loop() {
     }
     curError |= ERRORSTATE_SERIAL_TIMEOUT;
 
-    
-    // set mode colour for 5s (this should trigger at boot)
-    // also use this to black out slider
-    if ((millis() - lastSerialRecvMillis) < SERIAL_TIMEOUT_MS + 5000) {
-      FastLED.setBrightness(RGB_BRIGHTNESS);
 
-      for (byte i = 0; i < NUM_SLIDER_LEDS; i++) {
-        sliderLeds[i] = CRGB::Black;
-      }
-      
-      switch(curSliderMode) {
-        case SLIDER_TYPE_DIVA:
-          sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Teal;
-          break;
-        default:
-          sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Olive;
-          break;
-      }
-
-      ledUpdate = true;
-    }
-    else {
-      if (sliderLeds[MODE_LED_RGB_INDEX] != (CRGB)CRGB::Black) {
-        sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Black;
+    #if SLIDER_LEDS
+      // set mode colour for 5s (this should trigger at boot)
+      // also use this to black out slider
+      if ((millis() - lastSerialRecvMillis) < SERIAL_TIMEOUT_MS + 5000) {
+        FastLED.setBrightness(RGB_BRIGHTNESS);
+  
+        for (byte i = 0; i < NUM_SLIDER_LEDS; i++) {
+          sliderLeds[i] = CRGB::Black;
+        }
+        
+        sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Teal;
+  
         ledUpdate = true;
       }
-    }
+      else {
+        if (sliderLeds[MODE_LED_RGB_INDEX] != (CRGB)CRGB::Black) {
+          sliderLeds[MODE_LED_RGB_INDEX] = CRGB::Black;
+          ledUpdate = true;
+        }
+      }
+    #endif // SLIDER_LEDS
   }
 
-  // now update LEDs once per loop
-  // done before scanning to reduce delay from receiving to showing
-  if (ledUpdate) {
-    FastLED.show();
-    ledUpdate = false;
-  }
+  #if SLIDER_LEDS
+    // now update LEDs once per loop
+    // done before scanning to reduce delay from receiving to showing
+    if (ledUpdate) {
+      FastLED.show();
+      ledUpdate = false;
+    }
+  #endif // SLIDER_LEDS
 
   // if slider scanning is on, update inputs (as appropriate)
   if (scanOn) {
     
-    // if slider touch state has changed (interrupt was triggered), send data
-    // also send as a keep alive if slider touch state hasn't changed recently
+    // if slider touch state has changed (interrupt was triggered), send data (currently disabled)
+    // also send data anyway if slider touch state hasn't changed recently
     if ( /*(digitalRead(PIN_SLIDER_IRQ) == LOW) ||*/ ((millis() - lastSliderSendMillis) > 10) ) {
       lastSliderSendMillis = millis();
       doSliderScan();
     }
 
-    if (curSliderDef->hasAir) {
-      // if air should be updated this loop, update it
-      if (loopCount % AIR_UPDATE_DUTY == 0) {
-        doAirScan();
-      }
-    }
+    #if BUTTON_INPUT
+      doButtonScan();
+    #endif
   }
 
 

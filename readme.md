@@ -1,15 +1,34 @@
-## Thinithm
+## SlidA
 
-My dumping ground for code to be used with a DIY chunithm/project diva slider I'm working making.  
-If you aren't already familiar with it, you probably got here by mistake.
+Code based on [Thinithm](https://github.com/somewhatlurker/thinithm) for Diva Arcade FT only sliders.
 
-* Code quality is non-existent (not even tested yet)
-* Don't ask for help -- this isn't ready
-* More info coming in the future (probably)
+* Code quality is non-existent
+* Only has minimal testing
 
-Code requires [QuickMpr121](https://github.com/somewhatlurker/QuickMpr121)
+Hardware is based on ATmega32u4 Arduinos -- (Pro) Micro or Leonardo. (may work on other boards, but I don't know)  
+Also requires 3\*MPR121 and (optionally) 32\*WS2812 compatible LEDs.  
+Button input is handled through keyboard buttons, but using an separate button encoder is recommended.
+
+Cheap generic MPR121 modules can be used off a <3.3V supply only, so I suggest to pair them with a 3.3V Pro Micro.  
+Adafruit MPR121 modules work off 5V and can be used with any compatible board.
+
+Make sure you set the address of your second and third MPR121s:  
+1. (For generic modules only) Cut between the ADD pads on the rear side.
+2. Solder a jumper from ADD to 3V for the second MPR121, and SDA for the third.
+
+Requires [QuickMpr121](https://github.com/somewhatlurker/QuickMpr121) and FastLED.
+
+Set pins in pins.h or use the defaults (based around Pro Micro):  
+|    Function    |    Pin    |
+|    --------    |    ---    |
+|   MPR121 SDA   |    SDA    |
+|   MPR121 SCL   |    SCL    |
+|   MPR121 IRQ   |     4     |
+|   Keyboard W   |     5     |
+|   Keyboard A   |     6     |
+|   Keyboard S   |     7     |
+|   Keyboard D   |     8     |
+|Keyboard Return |     9     |
+|Slider LED Data |    10     |
 
 For now, MIT license (subject to change for future versions)
-  * Note: while all code should be problem-free (using independent implementations),
-    some hardware details (air tower system) are based on the OpeNITHM design.  
-    OpeNITHM uses GPL v3, so please ensure that modifications to the air towers are made public.
